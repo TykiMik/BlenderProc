@@ -1,0 +1,1 @@
+py run.py examples/granulatum/config.yaml examples/granulatum/active.obj examples/granulatum/passive.obj examples/granulatum/output examples/granulatum/temp
