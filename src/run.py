@@ -10,7 +10,7 @@ if not dir in sys.path:
     sys.path.append(dir)
 
 # Add path to custom packages inside the blender main directory
-if platform == "linux" or platform == "linux2":
+if platform == "linux" or platform == "linux2" or platform == "win32":
     packages_path = os.path.abspath(os.path.join(os.path.dirname(sys.executable), "custom-python-packages"))
 elif platform == "darwin":
     packages_path = os.path.abspath(os.path.join(os.path.dirname(sys.executable), "..", "Resources", "custom-python-packages"))

@@ -33,6 +33,9 @@ setup_config = config["setup"]
 
 # If blender should be downloaded automatically
 if "custom_blender_path" not in setup_config:
+    if platform == "win32":
+        raise Exception("Auto install is not supported on: {}. Please install blender manually and use the 'custom_blender_path' tag in setup.".format(platform))
+
     # Determine path where blender should be installed
     if "blender_install_path" in setup_config:
         blender_install_path = os.path.expanduser(setup_config["blender_install_path"])
@@ -150,30 +153,46 @@ if "pip" in setup_config:
 # Install required packages
 if len(required_packages) > 0:
     # Install pip
-    if platform == "linux" or platform == "linux2":
+    if platform == "linux" or platform == "linux2" or platform == "win32":
         python_bin_folder = os.path.join(blender_path, major_version, "python", "bin")
         packages_path = os.path.abspath(os.path.join(blender_path, "custom-python-packages"))
-        pre_python_package_path = os.path.join(blender_path, major_version, "python", "lib", "python3.7", "site-packages")
+        if platform == "win32":
+            pre_python_package_path = os.path.join(blender_path, major_version, "python", "lib", "site-packages")
+        else:
+            pre_python_package_path = os.path.join(blender_path, major_version, "python", "lib", "python3.7", "site-packages")
     elif platform == "darwin":
         python_bin_folder = os.path.join(blender_path, "Contents", "Resources", major_version, "python", "bin")
         packages_path = os.path.abspath(os.path.join(blender_path, "Contents", "Resources", "custom-python-packages"))
         pre_python_package_path = os.path.join(blender_path, "Contents", "Resources", major_version, "python", "lib", "python3.7", "site-packages")
     else:
         raise Exception("This system is not supported yet: {}".format(platform))
-    subprocess.Popen(["./python3.7m", "-m", "ensurepip"], env=dict(os.environ, PYTHONPATH=""), cwd=python_bin_folder).wait()
-    # Make sure pip is up-to-date
-    subprocess.Popen(["./python3.7m", "-m", "pip", "install", "--upgrade", "pip"], env=dict(os.environ, PYTHONPATH=""), cwd=python_bin_folder).wait()
+
+    if platform == "win32":
+        subprocess.Popen([f"{python_bin_folder}/python", "-m", "ensurepip"], env=dict(os.environ, PYTHONPATH="")).wait()
+        # Make sure pip is up-to-date
+        subprocess.Popen([f"{python_bin_folder}/python", "-m", "pip", "install", "--upgrade", "pip"], env=dict(os.environ, PYTHONPATH=""), cwd=python_bin_folder).wait()
+    else:
+        subprocess.Popen(["./python3.7m", "-m", "ensurepip"], env=dict(os.environ, PYTHONPATH=""), cwd=python_bin_folder).wait()
+        # Make sure pip is up-to-date
+        subprocess.Popen(["./python3.7m", "-m", "pip", "install", "--upgrade", "pip"], env=dict(os.environ, PYTHONPATH=""), cwd=python_bin_folder).wait()
 
     # Make sure to not install into the default site-packages path, as this would overwrite already pre-installed packages
     if not os.path.exists(packages_path):
         os.mkdir(packages_path)
         
     used_env = dict(os.environ, PYTHONPATH=packages_path + ":" + pre_python_package_path)
-    # Collect already installed packages by calling pip list (outputs: <package name>==<version>)
-    installed_packages = subprocess.check_output(["./python3.7m", "-m", "pip", "list", "--format=freeze",
-                                                  "--path={}".format(pre_python_package_path)], cwd=python_bin_folder)
-    installed_packages += subprocess.check_output(["./python3.7m", "-m", "pip", "list", "--format=freeze",
-                                                  "--path={}".format(packages_path)], cwd=python_bin_folder)
+    if platform == "win32":
+        # Collect already installed packages by calling pip list (outputs: <package name>==<version>)
+        installed_packages = subprocess.check_output([f"{python_bin_folder}/python", "-m", "pip", "list", "--format=freeze",
+                                                      "--path={}".format(pre_python_package_path)])
+        installed_packages += subprocess.check_output([f"{python_bin_folder}/python", "-m", "pip", "list", "--format=freeze",
+                                                       "--path={}".format(packages_path)])
+    else:
+        # Collect already installed packages by calling pip list (outputs: <package name>==<version>)
+        installed_packages = subprocess.check_output(["./python3.7m", "-m", "pip", "list", "--format=freeze",
+                                                      "--path={}".format(pre_python_package_path)], cwd=python_bin_folder)
+        installed_packages += subprocess.check_output(["./python3.7m", "-m", "pip", "list", "--format=freeze",
+                                                      "--path={}".format(packages_path)], cwd=python_bin_folder)
 
     # Split up strings into two lists (names and versions)
     installed_packages_name, installed_packages_versions = zip(*[str(line).lower().split('==') for line in installed_packages.splitlines()])
@@ -200,14 +219,20 @@ if len(required_packages) > 0:
             # If there is already a different version installed
             if not already_installed:
                 # Remove the old version (We have to do this manually, as we are using --target with pip install. There old version are not removed)
-                subprocess.Popen(["./python3.7m", "-m", "pip", "uninstall", package_name, "-y"], env=dict(os.environ, PYTHONPATH=packages_path), cwd=python_bin_folder).wait()
+                if platform == "win32":
+                    subprocess.Popen([f"{python_bin_folder}/python", "-m", "pip", "uninstall", package_name, "-y"], env=dict(os.environ, PYTHONPATH=packages_path)).wait()
+                else:
+                    subprocess.Popen(["./python3.7m", "-m", "pip", "uninstall", package_name, "-y"], env=dict(os.environ, PYTHONPATH=packages_path), cwd=python_bin_folder).wait()
 
         # Only install if its not already installed (pip would check this itself, but at first downloads the requested package which of course always takes a while)
         if not already_installed or args.reinstall_packages:
-            subprocess.Popen(["./python3.7m", "-m", "pip", "install", package, "--target", packages_path, "--upgrade"], env=dict(os.environ, PYTHONPATH=packages_path), cwd=python_bin_folder).wait()
+            if platform == "win32":
+                subprocess.Popen([f"{python_bin_folder}/python", "-m", "pip", "install", package, "--target", packages_path, "--upgrade"], env=dict(os.environ, PYTHONPATH=packages_path)).wait()
+            else:
+                subprocess.Popen(["./python3.7m", "-m", "pip", "install", package, "--target", packages_path, "--upgrade"], env=dict(os.environ, PYTHONPATH=packages_path), cwd=python_bin_folder).wait()
 
 # Run script
-if platform == "linux" or platform == "linux2":
+if platform == "linux" or platform == "linux2" or platform == "win32":
     blender_run_path = os.path.join(blender_path, "blender")
 elif platform == "darwin":
     blender_run_path = os.path.join(blender_path, "Contents", "MacOS", "Blender")
