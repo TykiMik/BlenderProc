@@ -29,6 +29,7 @@ class LightInterface(Module):
                    "Type: float. Default: 0. Range: [0, inf]"
        "energy", "Intensity of the emission of a light source. Type: float. Default: 10."
        "type", "The type of a light source. Type: string. Default: POINT. Available: [POINT, SUN, SPOT, AREA]"
+       "cast_shadow", "For Sun lamps, is it casting shadow. Type: bool, Default: True"
     """
 
     def __init__(self, config):
@@ -46,9 +47,12 @@ class LightInterface(Module):
         light_obj = bpy.data.objects.new(name="light", object_data=light_data)
         bpy.context.collection.objects.link(light_obj)
 
-        light_data.type = config.get_string("type", 'POINT')
+        light_type = config.get_string("type", 'POINT')
+        light_data.type = light_type
         light_obj.location = config.get_list("location", [0, 0, 0])
         light_obj.rotation_euler = config.get_list("rotation", [0, 0, 0])
         light_data.energy = config.get_float("energy", 10.)
         light_data.color = config.get_list("color", [1, 1, 1])[:3]
         light_data.distance = config.get_float("distance", 0)
+        if light_type == "SUN":
+            light_data.cycles.cast_shadow = config.get_bool("cast_shadow", True)

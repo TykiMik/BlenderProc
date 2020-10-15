@@ -1,4 +1,4 @@
-# Args: <obj_file1> <obj_file2> <output_dir> <temp_dir>
+# Args: <obj_file1> <obj_file2> <output_dir> <temp_dir> <Material.blend>
 {
   "version": 3,
   "setup": {
@@ -12,9 +12,19 @@
       "module": "main.Initializer",
       "config": {
         "global": {
-          "output_dir": "<args:2>",
-          "temp_dir": "<args:3>"
+          "output_is_temp": True,
+          "temp_dir": "<args:2>",
+          "resolution_x": 800,
+          "resolution_y": 800
         }
+      }
+    },
+    {
+      "module": "constructor.GranulatumGenerator",
+      "config":{
+        "output_path": "<args:0>",
+        "amount": 400,
+        "use_existing": False
       }
     },
     {
@@ -36,6 +46,20 @@
       }
     },
     {
+      "module": "loader.BlendLoader",
+      "config": {
+        "path": "<args:3>",
+        "load_from": "/Material"
+      }
+    },
+    {
+      "module": "manipulators.WorldManipulator",
+      "config": {
+        "cf_bg_surface_color": [0.05, 0.05, 0.05, 0.05],
+        "cf_bg_surface_strength": 0.6
+      }
+    },
+    {
       "module": "object.ObjectPoseSampler",
       "config":{
         "objects_to_sample": {
@@ -47,11 +71,66 @@
         },
         "pos_sampler":{
           "provider":"sampler.Uniform3d",
-          "max":[10, 10, 4],
-          "min":[-10, -10, 30]
+          "max":[4, 4, 4],
+          "min":[-4, -4, 70]
         },
         "rot_sampler":{
           "provider":"sampler.UniformSO3"
+        }
+      }
+    },
+    {
+      "module": "manipulators.EntityManipulator",
+      "config": {
+        "selector": {
+          "provider": "getter.Entity",
+          "conditions": {
+            "cp_physics": False,
+            "type": "MESH"
+          }
+        },
+        "scale": [10, 3, 10],
+        "hide_render": True
+      }
+    },
+    {
+      "module": "manipulators.EntityManipulator",
+      "config": {
+        "selector": {
+          "provider": "getter.Entity",
+          "conditions": {
+            "cp_physics": True,
+            "type": "MESH"
+          }
+        },
+        "mode": "once_for_all",
+        "cf_randomize_materials": {
+          "randomization_level": 1,
+          "materials_to_replace_with": {
+            "provider": "getter.Material",
+            "random_samples": 1,
+            "conditions": {
+              "name": "Granulatum_mat"
+            }
+          }
+        }
+      }
+    },
+    {
+      "module": "manipulators.EntityManipulator",
+      "config": {
+        "selector": {
+          "provider": "getter.Entity",
+          "conditions": {
+            "cp_physics": True,
+            "type": "MESH"
+          }
+        },
+        "scale": {
+          "provider": "sampler.EqualUniform3d",
+          "mode": "normal",
+          "mean": 0.65,
+          "std_dev": 0.1
         }
       }
     },
@@ -62,9 +141,51 @@
           {
             "type": "SUN",
             "location": [0, 0, 0],
-            "rotation": [-0.063, 0.6177, -0.1985],
-            "energy": 1
-          }
+            "rotation": {
+              "provider": "sampler.Uniform3d",
+              "min": [0.0, -0.436332, 1.570769],
+              "max": [0.0, -1.134464, 1.570769]
+            },
+            "cast_shadow": False,
+            "energy": {
+              "provider": "sampler.Value",
+              "type": "float",
+              "min": 1,
+              "max": 1.4
+            }
+          },
+          {
+            "type": "SUN",
+            "location": [0, 0, 0],
+            "rotation": {
+              "provider": "sampler.Uniform3d",
+              "min": [0.0, -0.436332, 0.0],
+              "max": [0.0, -1.134464, 0.0]
+            },
+            "cast_shadow": False,
+            "energy": {
+              "provider": "sampler.Value",
+              "type": "float",
+              "min": 1,
+              "max": 1.4
+            }
+          },
+          {
+            "type": "SUN",
+            "location": [0, 0, 0],
+            "rotation": {
+              "provider": "sampler.Uniform3d",
+              "min": [0.0, -0.436332, 3.141593],
+              "max": [0.0, -1.134464, 3.141593]
+            },
+            "cast_shadow": False,
+            "energy": {
+              "provider": "sampler.Value",
+              "type": "float",
+              "min": 1,
+              "max": 1.4
+            }
+          },
         ]
       }
     },
@@ -73,7 +194,7 @@
       "config": {
         "cam_poses": [
           {
-            "location": [0, 0, 50],
+            "location": [0, 0, 13.35],
             "rotation": {
               "value": [0, 0, 0]
             }
@@ -85,13 +206,32 @@
       "module": "object.PhysicsPositioning",
       "config": {
         "min_simulation_time": 4,
-        "max_simulation_time": 20,
+        "max_simulation_time": 15,
         "check_object_interval": 1,
-        "collision_shape": "MESH"
+        "objs_with_mesh_collision_shape": {
+          "provider": "getter.Entity",
+          "conditions": {
+            "cp_physics": False
+          }
+        }
       }
     },
     {
-      "module": "renderer.RgbRenderer"
+      "module": "renderer.RgbRenderer",
+      "config": {
+        "samples": 25
+      }
+    },
+    {
+      "module": "writer.YoloAnnotationsWriter",
+      "config": {
+          "objs_to_annotate": {
+            "provider": "getter.Entity",
+            "conditions": {
+              "cp_physics": True
+            }
+          }
+      }
     }
   ]
 }

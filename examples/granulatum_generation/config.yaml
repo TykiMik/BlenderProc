@@ -1,0 +1,28 @@
+# Args: <cam_file> <output_dir> <obj_file>
+{
+  "version": 3,
+  "setup": {
+    "custom_blender_path": "C:/Program Files/Blender Foundation/Blender 2.83/",
+    "pip": [
+      "h5py"
+    ]
+  },
+  "modules": [
+    {
+      "module": "main.Initializer",
+      "config":{
+        "global": {
+          "output_dir": "<args:0>"
+        }
+      }
+    },
+    {
+      "module": "constructor.GranulatumGenerator",
+      "config":{
+        "output_path": "<args:1>",
+        "amount": 100,
+        "use_existing": False
+      }
+    }
+  ]
+}

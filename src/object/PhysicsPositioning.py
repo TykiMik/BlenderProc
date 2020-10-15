@@ -35,6 +35,10 @@ class PhysicsPositioning(Module):
                            "Available: 'BOX', 'SPHERE', 'CAPSULE', 'CYLINDER', 'CONE', 'CONVEX_HULL', 'MESH'."
         "objs_with_box_collision_shape", "List of objects that get 'BOX' collision shape instead 'collision_shape'."
                                          "Result of the getter.Entity. Type: list. Default: []"
+        "objs_with_capsule_collision_shape", "List of objects that get 'CAPSULE' collision shape instead 'collision_shape'."
+                                         "Result of the getter.Entity. Type: list. Default: []"
+        "objs_with_mesh_collision_shape", "List of objects that get 'MESH' collision shape instead 'collision_shape'."
+                                         "Result of the getter.Entity. Type: list. Default: []"
         "mass_scaling", "Toggles scaling of mass for objects (1 kg/1m3 of a bounding box). Type: bool. Default: False."
         "mass_factor", "Scaling factor for mass. Defines the linear function mass=bounding_box_volume*mass_factor "
                        "(defines material density). Type: float. Default: 1."
@@ -124,6 +128,10 @@ class PhysicsPositioning(Module):
             obj.select_set(True)
             if obj in self.config.get_list("objs_with_box_collision_shape", []):
                 obj.rigid_body.collision_shape = "BOX"
+            elif obj in self.config.get_list("objs_with_capsule_collision_shape", []):
+                obj.rigid_body.collision_shape = "CAPSULE"
+            elif obj in self.config.get_list("objs_with_mesh_collision_shape", []):
+                obj.rigid_body.collision_shape = "MESH"
             else:
                 obj.rigid_body.collision_shape = self.collision_shape
             obj.rigid_body.collision_margin = self.collision_margin
