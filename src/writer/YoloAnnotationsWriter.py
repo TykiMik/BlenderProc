@@ -27,7 +27,7 @@ class YoloAnnotationsWriter(WriterInterface):
 
     def run(self):
         """ Writes yolo annotations in the following steps:
-        1. Locat the rgb maps
+        1. Locate the rgb maps
         2. For each frame write the Yolo annotation
         """
         if self._avoid_rendering:
@@ -56,6 +56,10 @@ class YoloAnnotationsWriter(WriterInterface):
             file = open(target_path, "w")
             count = 1
             for obj in self.config.get_list("objs_to_annotate", []):
+                if obj.get("classId") is None:
+                    raise Exception("There is no classId custom property registered to the object: {}. "
+                                    "You have to assign the property to every object you want to annotate".format(obj.name))
+
                 object_bounds = Utility.camera_view_bounds_2d(scene, cam_obj, obj)
                 if all(object_bounds):
                     rel_center_x = (object_bounds[0]+object_bounds[2]/2) / render_width
@@ -63,8 +67,7 @@ class YoloAnnotationsWriter(WriterInterface):
                     rel_width = object_bounds[2] / render_width
                     rel_height = object_bounds[3] / render_height
                     yolo_format = f"{rel_center_x} {rel_center_y} {rel_width} {rel_height}"
-
-                    file.write(f'{count} {yolo_format} \n')
+                    file.write(f'{obj["classId"]} {yolo_format} \n')
                     count += 1
 
         scene.frame_set(scene.frame_start)

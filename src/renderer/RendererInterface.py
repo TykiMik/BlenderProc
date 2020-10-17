@@ -57,6 +57,10 @@ class RendererInterface(Module):
                                 "helps if a lot of transparency objects are stacked after each other. "
                                 "Type: int. Default: 8"
         "volume_bounces", "Maximum number of volumetric scattering events. Type: int. Default: 0"
+        "bvh_type", "determines which bvh type to use. type: string. Default: 'DYNAMIC_BVH'
+                    "Available: [DYNAMIC_BVH, STATIC_BVH]"
+        "use_spatial_splits", "use of spatial split, if this is set the build time is longer but the render is faster. "
+                              "type: bool. Default: True"
 
         "render_distance", "If true, the distance is also rendered to file. Type: bool. Default: False."
         "use_mist_distance", "If true, the distance is sampled over several iterations, useful for motion blur or"
@@ -203,8 +207,8 @@ class RendererInterface(Module):
         bpy.context.scene.cycles.transparent_max_bounces = self.config.get_int("transparency_bounces", 8)
         bpy.context.scene.cycles.volume_bounces = self.config.get_int("volume_bounces", 0)
 
-        bpy.context.scene.cycles.debug_bvh_type = "STATIC_BVH"
-        bpy.context.scene.cycles.debug_use_spatial_splits = True
+        bpy.context.scene.cycles.debug_bvh_type = self.config.get_string("bvh_type", "DYNAMIC_BVH")
+        bpy.context.scene.cycles.debug_use_spatial_splits = self.config.get_bool("use_spatial_splits", True)
         # Setting use_persistent_data to True makes the rendering getting slower and slower (probably a blender bug)
         bpy.context.scene.render.use_persistent_data = False
 

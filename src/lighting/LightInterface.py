@@ -1,3 +1,5 @@
+import math
+
 import bpy
 
 from src.main.Module import Module
@@ -30,6 +32,7 @@ class LightInterface(Module):
        "energy", "Intensity of the emission of a light source. Type: float. Default: 10."
        "type", "The type of a light source. Type: string. Default: POINT. Available: [POINT, SUN, SPOT, AREA]"
        "cast_shadow", "For Sun lamps, is it casting shadow. Type: bool, Default: True"
+       "angle", "determines the angle value for sun lamps in degree, type: float, default: 0.526"
     """
 
     def __init__(self, config):
@@ -54,5 +57,8 @@ class LightInterface(Module):
         light_data.energy = config.get_float("energy", 10.)
         light_data.color = config.get_list("color", [1, 1, 1])[:3]
         light_data.distance = config.get_float("distance", 0)
-        if light_type == "SUN":
+        if light_type == "SUN" or light_type == "AREA":
             light_data.cycles.cast_shadow = config.get_bool("cast_shadow", True)
+        if light_type == "SUN":
+            bpy.context.view_layer.objects.active = light_obj
+            bpy.context.object.data.angle = config.get_float("angle", 0.526) / 180 * math.pi
