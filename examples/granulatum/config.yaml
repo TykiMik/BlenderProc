@@ -23,8 +23,8 @@
       "module": "constructor.GranulatumGenerator",
       "config":{
         "output_path": "<args:0>",
-        "amount": 100,
-        "use_existing": False
+        "amount": 450,
+        "use_existing": True
       }
     },
     {
@@ -268,7 +268,11 @@
         "bvh_type": "DYNAMIC_BVH",
         "use_spatial_splits": False,
         "cf_add_side_blur":{
-         "img_blur_kernel_size": [20, 20],
+         "img_blur_kernel_size": {
+           "provider": "sampler.Uniform2d",
+           "min": [5, 5],
+           "max": [15, 15]
+         },
          "img_blur_type": "GAUSS",
          "ellipse_mask_width": 1,
          "ellipse_mask_height": {

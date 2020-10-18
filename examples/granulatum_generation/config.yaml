@@ -12,16 +12,86 @@
       "module": "main.Initializer",
       "config":{
         "global": {
-          "output_dir": "<args:0>"
+          "output_dir": "<args:1>"
         }
       }
     },
     {
       "module": "constructor.GranulatumGenerator",
       "config":{
-        "output_path": "<args:1>",
-        "amount": 100,
-        "use_existing": False
+        "use_file": False,
+        "keep_objects": True,
+        "amount": 100
+      }
+    },
+    {
+      "module": "loader.ObjectLoader",
+      "config": {
+        "path": "<args:0>",
+        "add_properties": {
+          "cp_physics": False
+        }
+      }
+    },
+    {
+      "module": "manipulators.EntityManipulator",
+      "config": {
+        "selector": {
+          "provider": "getter.Entity",
+          "conditions": {
+            "cp_generated": True
+          }
+        },
+        "cp_physics": True
+      }
+    },
+    {
+      "module": "object.ObjectPoseSampler",
+      "config":{
+        "objects_to_sample": {
+          "provider": "getter.Entity",
+          "conditions": {
+            "cp_physics": True,
+            "type": "MESH"
+          }
+        },
+        "pos_sampler":{
+          "provider":"sampler.Uniform3d",
+          "max":[9, 9, 4],
+          "min":[-9, -9, 100]
+        },
+        "rot_sampler":{
+          "provider":"sampler.UniformSO3"
+        }
+      }
+    },
+    {
+      "module": "manipulators.EntityManipulator",
+      "config": {
+        "selector": {
+          "provider": "getter.Entity",
+          "conditions": {
+            "cp_physics": False,
+            "type": "MESH"
+          }
+        },
+        "scale": [20, 4, 20],
+        "hide_render": True
+      }
+    },
+    {
+      "module": "object.PhysicsPositioning",
+      "config": {
+        "min_simulation_time": 14,
+        "max_simulation_time": 15,
+        "check_object_interval": 1,
+        "collision_margin": 0.02,
+        "objs_with_mesh_collision_shape": {
+          "provider": "getter.Entity",
+          "conditions": {
+            "cp_physics": False
+          }
+        }
       }
     }
   ]
