@@ -23,7 +23,8 @@
       "module": "constructor.GranulatumGenerator",
       "config":{
         "output_path": "<args:0>",
-        "amount": 450,
+        "amount": 470,
+        "primitive_shape_scale": 0.5,
         "use_existing": True
       }
     },
@@ -257,7 +258,12 @@
     {
       "module": "renderer.RgbRenderer",
       "config": {
-        "samples": 80,
+        "samples":{
+          "provider": "sampler.Value",
+          "type": "int",
+          "min": 65,
+          "max": 100
+        },
         "use_denoiser": False,
         "diffuse_bounces": 4,
         "glossy_bounces": 4,

@@ -43,7 +43,8 @@ class GranulatumGenerator(Module):
 
         bpy.ops.mesh.primitive_uv_sphere_add()
         sphere = bpy.context.object
-        sphere.scale = [0.5, 0.5, 0.5]  # making 1x1x1 sphere instead of the default 2x2x2
+        scaling_factor = self.config.get_float("primitive_shape_scale", 0.5)
+        sphere.scale = [scaling_factor, scaling_factor, scaling_factor]  # making 1x1x1 sphere instead of the default 2x2x2
         sphere["generated"] = True
         mesh = bpy.context.object.data
 
