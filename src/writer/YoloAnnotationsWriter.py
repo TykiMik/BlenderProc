@@ -61,9 +61,9 @@ class YoloAnnotationsWriter(WriterInterface):
                                     "You have to assign the property to every object you want to annotate".format(obj.name))
 
                 object_bounds = Utility.camera_view_bounds_2d(scene, cam_obj, obj)
-                if all(object_bounds):
+                if self._check_validity(object_bounds, render_width, render_height):
                     rel_center_x = (object_bounds[0]+object_bounds[2]/2) / render_width
-                    rel_center_y = (object_bounds[1]-object_bounds[3]/2) / render_height
+                    rel_center_y = (object_bounds[1]+object_bounds[3]/2) / render_height
                     rel_width = object_bounds[2] / render_width
                     rel_height = object_bounds[3] / render_height
                     yolo_format = f"{rel_center_x} {rel_center_y} {rel_width} {rel_height}"
@@ -71,3 +71,14 @@ class YoloAnnotationsWriter(WriterInterface):
                     count += 1
 
         scene.frame_set(scene.frame_start)
+
+    def _check_validity(self, bounds, render_width, render_height):
+        x = bounds[0]
+        y = bounds[1]
+        width = bounds[2]
+        height = bounds[3]
+
+        error = 1
+        # float comparison with error tolerance
+        # left side clamped to zero or right side clamped to render width
+        return not (abs(x - 0) <= error or abs((x + width) - render_width) <= error or abs(y - 0) <= error or abs((y + height) - render_height) <= error)

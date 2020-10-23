@@ -34,7 +34,7 @@
         "path": "<args:0>",
         "add_properties": {
            "cp_physics": True,
-           "cp_classId": 15
+           "cp_classId": 0
         }
       }
     },

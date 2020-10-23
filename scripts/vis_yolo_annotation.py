@@ -29,10 +29,12 @@ for line in lines:
     box = tuple(map(float, line.split(' ')))
     box = box[1:]
 
+    print(width)
+    print(height)
     box_width = (box[2] * width)
     box_height = (box[3] * height)
     left_x = (box[0] * width - box_width/2)
-    left_y = (box[1] * height + box_height/2)
+    left_y = (box[1] * height - box_height/2)
 
     # Create a Rectangle patch
     rect = patches.Rectangle((left_x, left_y), box_width, box_height, linewidth=1, edgecolor='r', facecolor='none')

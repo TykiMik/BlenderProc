@@ -501,8 +501,8 @@ class Utility:
         dim_y = r.resolution_y * fac
 
         # Sanity check
-        if round((max_x - min_x) * dim_x) == 0 or round((max_y - min_y) * dim_y) == 0:
-            return (0, 0, 0, 0)
+        # if round((max_x - min_x) * dim_x) == 0 or round((max_y - min_y) * dim_y) == 0:
+        #     return (0, 0, 0, 0)
 
         return (
             round(min_x * dim_x),  # X
