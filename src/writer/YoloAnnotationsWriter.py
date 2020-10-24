@@ -67,7 +67,7 @@ class YoloAnnotationsWriter(WriterInterface):
                     rel_width = object_bounds[2] / render_width
                     rel_height = object_bounds[3] / render_height
                     yolo_format = f"{rel_center_x} {rel_center_y} {rel_width} {rel_height}"
-                    file.write(f'{obj["classId"]} {yolo_format} \n')
+                    file.write(f'{obj["classId"]} {yolo_format}\n')
                     count += 1
 
         scene.frame_set(scene.frame_start)
