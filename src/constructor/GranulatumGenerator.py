@@ -1,5 +1,6 @@
 import bpy
 
+import math
 import random
 import os
 
@@ -19,6 +20,7 @@ class GranulatumGenerator(Module):
         file_path = Utility.resolve_path(output_path)
         use_file = self.config.get_bool("use_file", True)
         keep_objects = self.config.get_bool("keep_objects", False)
+        keep_loose_parts = self.config.get_bool("keep_loose_parts", False)
 
         if use_file and use_existing and os.path.exists(file_path):
             return
@@ -29,44 +31,78 @@ class GranulatumGenerator(Module):
 
             if use_file:
                 bpy.ops.object.select_all(action='DESELECT')
+                already_selected = 0
                 for obj in bpy.data.objects:
                     if obj.get("generated") is not None:
-                        obj.select_set(True)
+                        if already_selected < amount:
+                            obj.select_set(True)
+                            already_selected += 1
+                        else:
+                            if keep_loose_parts:
+                                obj.select_set(True)
+                                already_selected += 1
+                            else:
+                                break
                 bpy.ops.export_scene.obj(filepath=file_path, use_selection=True)
 
 
     def _generate_object(self):
-        taper_chance = self.config.get_float("taper_chance", 0.5)
-        stretch_chance = self.config.get_float("stretch_chance", 0.5)
-        max_taper = self.config.get_float("max_taper", 0.5)
-        max_stretch = self.config.get_float("max_stretch", 0.5)
+        # Creating the metaball data, instantiating it and attaching it to the active scene.
+        mball = bpy.data.metaballs.new('MetaBall')
+        obj = bpy.data.objects.new('MetaBallObj', mball)
+        bpy.context.view_layer.active_layer_collection.collection.objects.link(obj)
 
-        bpy.ops.mesh.primitive_uv_sphere_add()
-        sphere = bpy.context.object
-        scaling_factor = self.config.get_float("primitive_shape_scale", 0.5)
-        sphere.scale = [scaling_factor, scaling_factor, scaling_factor]  # making 1x1x1 sphere instead of the default 2x2x2
-        sphere["generated"] = True
-        mesh = bpy.context.object.data
+        # Setting the resolution of the ball (think of it as how fine you want it to be)
 
-        for f in mesh.polygons:
-            f.use_smooth = True
+        mball.render_resolution = self.config.get_float("render_resolution", 0.03)
+        obj.data.threshold = self.config.get_float("threshold", 0.4)
 
-        is_tapered = random.random()
-        if is_tapered <= taper_chance:
-            bpy.ops.object.modifier_add(type='SIMPLE_DEFORM')
-            taper = bpy.context.object.modifiers['SimpleDeform']
-            taper.name = 'taper'
-            taper.deform_method = 'TAPER'
-            taper.deform_axis = 'Y'
-            taper.factor = -random.uniform(0.0, max_taper)
-            bpy.ops.object.modifier_apply(modifier='taper')
+        min_element_count = self.config.get_int("min_element", 1)
+        max_element_count = self.config.get_int("max_element", 20)
+        meta_element_count = random.randint(min_element_count, max_element_count)
+        for i in range(meta_element_count):
+            coordinate = self._sphere_coordinate(meta_element_count / 5)
+            element = mball.elements.new()
+            element.co = coordinate
 
-        is_stretched = random.random()
-        if is_stretched <= stretch_chance:
-            bpy.ops.object.modifier_add(type='SIMPLE_DEFORM')
-            taper = bpy.context.object.modifiers['SimpleDeform']
-            taper.name = 'stretch'
-            taper.deform_method = 'STRETCH'
-            taper.deform_axis = 'Y'
-            taper.factor = random.uniform(0.0, max_stretch)
-            bpy.ops.object.modifier_apply(modifier='stretch')
+            min_radius = self.config.get_float("min_radius", 1.0)
+            max_radius = self.config.get_float("max_radius", 2.0)
+            element.radius = random.uniform(min_radius, max_radius)
+
+        # convert metaballs to mesh with bmesh module
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        meta_eval = obj.evaluated_get(depsgraph)
+
+        tmpMesh = bpy.data.meshes.new_from_object(meta_eval)
+        tmpMesh.transform(obj.matrix_world)
+
+        final_obj = bpy.data.objects.new('Granulatum_obj', tmpMesh)
+        bpy.context.view_layer.active_layer_collection.collection.objects.link(final_obj)
+
+        final_obj["generated"] = True
+
+        bpy.ops.object.select_all(action='DESELECT')
+        final_obj.select_set(True)
+        bpy.ops.mesh.separate(type='LOOSE')
+        bpy.ops.object.select_all(action='DESELECT')
+
+        # Delete metaball object
+        bpy.data.objects.remove(obj)
+        bpy.data.metaballs.remove(mball)
+
+
+    def _cube_root(self, num):
+        return num ** (1. / 3)
+
+    def _sphere_coordinate(self, radius):
+        phi = random.uniform(0, 2 * math.pi)
+        costheta = random.uniform(-1, 1)
+        u = random.uniform(0, 1)
+
+        theta = math.acos(costheta)
+        r = radius * self._cube_root(u)
+
+        x = r * math.sin(theta) * math.cos(phi)
+        y = r * math.sin(theta) * math.sin(phi)
+        z = r * math.cos(theta)
+        return (x, y, z)

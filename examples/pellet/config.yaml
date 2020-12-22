@@ -20,12 +20,12 @@
       }
     },
     {
-      "module": "constructor.GranulatumGenerator",
+      "module": "constructor.PelletGenerator",
       "config":{
         "output_path": "<args:0>",
-        "amount": 700,
-        "primitive_shape_scale": 0.4,
-        "use_existing": True
+        "amount": 100,
+        "primitive_shape_scale": 0.5,
+        "use_existing": False
       }
     },
     {

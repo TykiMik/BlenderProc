@@ -5,8 +5,8 @@ import numpy as np
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-i', '--image', dest='image', default='examples/granulatum/output/rgb_000.png' ,help='image over which to annotate', type=str)
-parser.add_argument('-a', '--annotation', dest='annotation', default='examples/granulatum/output/rgb_000.txt', help='path to yolo annotation txt', type=str)
+parser.add_argument('-i', '--image', dest='image', default='examples/pellet/output/rgb_000.png' ,help='image over which to annotate', type=str)
+parser.add_argument('-a', '--annotation', dest='annotation', default='examples/pellet/output/rgb_000.txt', help='path to yolo annotation txt', type=str)
 
 args = parser.parse_args()
 
@@ -29,8 +29,6 @@ for line in lines:
     box = tuple(map(float, line.split(' ')))
     box = box[1:]
 
-    print(width)
-    print(height)
     box_width = (box[2] * width)
     box_height = (box[3] * height)
     left_x = (box[0] * width - box_width/2)

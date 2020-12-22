@@ -1,4 +1,4 @@
-# Args: <obj_file1> <obj_file2> <output_dir> <temp_dir> <Material.blend>
+# Args:  <obj_file> <output_dir>
 {
   "version": 3,
   "setup": {
@@ -10,55 +10,37 @@
   "modules": [
     {
       "module": "main.Initializer",
-      "config": {
+      "config":{
         "global": {
           "output_is_temp": True,
-          "temp_dir": "<args:2>",
-          "resolution_x": 1280,
-          "resolution_y": 720
+          "temp_dir": "<args:0>",
+          "resolution_x": 696,
+          "resolution_y": 696,
+          "for_animation": True,
+          "animation_fps": 100,
+          "animation_start": 0,
+          "animation_end": 10
         }
       }
     },
     {
       "module": "constructor.GranulatumGenerator",
       "config":{
-        "output_path": "<args:0>",
-        "amount": 470,
-        "primitive_shape_scale": 0.5,
-        "use_existing": True
+        "use_file": False,
+        "keep_objects": True,
+        "amount": 2200
       }
     },
     {
-      "module": "loader.ObjectLoader",
+      "module": "manipulators.EntityManipulator",
       "config": {
-        "path": "<args:0>",
-        "add_properties": {
-           "cp_physics": True,
-           "cp_classId": 0
-        }
-      }
-    },
-    {
-      "module": "loader.ObjectLoader",
-      "config": {
-        "path": "<args:1>",
-        "add_properties": {
-          "cp_physics": False
-        }
-      }
-    },
-    {
-      "module": "loader.BlendLoader",
-      "config": {
-        "path": "<args:3>",
-        "load_from": "/Material"
-      }
-    },
-    {
-      "module": "manipulators.WorldManipulator",
-      "config": {
-        "cf_bg_surface_color": [0.2, 0.2, 0.2, 0.2],
-        "cf_bg_surface_strength": 1.2
+        "selector": {
+          "provider": "getter.Entity",
+          "conditions": {
+            "cp_generated": True
+          }
+        },
+        "cp_physics": True
       }
     },
     {
@@ -73,8 +55,8 @@
         },
         "pos_sampler":{
           "provider":"sampler.Uniform3d",
-          "max":[4, 4, 4],
-          "min":[-4, -4, 70]
+          "max":[50, 20, 40],
+          "min":[-20, -50, 20000]
         },
         "rot_sampler":{
           "provider":"sampler.UniformSO3"
@@ -82,264 +64,78 @@
       }
     },
     {
-      "module": "manipulators.EntityManipulator",
+      "module": "camera.CameraLoader",
       "config": {
-        "selector": {
-          "provider": "getter.Entity",
-          "conditions": {
-            "cp_physics": False,
-            "type": "MESH"
+        "cam_poses": [
+        {
+          "location": [0, 250, 5],
+          "rotation": {
+            "value": [1.5707963268, 0, 3.1415926536]
           }
         },
-        "scale": [10, 3, 10],
-        "hide_render": False
-      }
-    },
-    # this section is for the holder object material
-    {
-      "module": "manipulators.MaterialManipulator",
-      "config": {
-        "selector": {
-          "provider": "getter.Material",
-          "conditions": {
-            "name": "Holder_mat"
-          }
-        },
-        "Scale": 10, # wave texture scale factor
-        "Strength": 0.4 # normal map strength higher values can cause artifacts
-      }
-    },
-    {
-      "module": "manipulators.EntityManipulator",
-      "config": {
-        "selector": {
-          "provider": "getter.Entity",
-          "conditions": {
-            "cp_physics": False,
-            "type": "MESH"
-          }
-        },
-        "mode": "once_for_all",
-        "cf_randomize_materials": {
-          "randomization_level": 1,
-          "materials_to_replace_with": {
-            "provider": "getter.Material",
-            "random_samples": 1,
-            "conditions": {
-              "name": "Holder_mat"
-            }
-          }
-        }
-      }
-    },
-    # end of holder object material section
-    {
-      "module": "manipulators.EntityManipulator",
-      "config": {
-        "selector": {
-          "provider": "getter.Entity",
-          "conditions": {
-            "cp_physics": True,
-            "type": "MESH"
-          }
-        },
-        "mode": "once_for_all",
-        "cf_randomize_materials": {
-          "randomization_level": 1,
-          "materials_to_replace_with": {
-            "provider": "getter.Material",
-            "random_samples": 1,
-            "conditions": {
-              "name": "Granulatum_mat"
-            }
-          }
-        }
-      }
-    },
-    {
-      "module": "manipulators.EntityManipulator",
-      "config": {
-        "selector": {
-          "provider": "getter.Entity",
-          "conditions": {
-            "cp_physics": True,
-            "type": "MESH"
-          }
-        },
-        "scale": {
-          "provider": "sampler.EqualUniform3d",
-          "mode": "normal",
-          "mean": 0.65,
-          "std_dev": 0.1
-        }
+        ]
       }
     },
     {
       "module": "lighting.LightLoader",
       "config": {
         "lights": [
-          {
-            "type": "SUN",
-            "location": [0, 0, 0],
-            "rotation": {
-              "provider": "sampler.Uniform3d",
-              "min": [0.0, -0.436332, 1.570769],
-              "max": [0.0, -1.134464, 1.570769]
-            },
-            "cast_shadow": True,
-            "angle": {
-              "provider": "sampler.Value",
-              "type": "float",
-              "min": 15,
-              "max": 20
-            },
-            "energy": {
-              "provider": "sampler.Value",
-              "type": "float",
-              "min": 1.3,
-              "max": 1.5
-            }
-          },
-          {
-            "type": "SUN",
-            "location": [0, 0, 0],
-            "rotation": {
-              "provider": "sampler.Uniform3d",
-              "min": [0.0, -0.436332, 0.0],
-              "max": [0.0, -1.134464, 0.0]
-            },
-            "cast_shadow": False,
-            "energy": {
-              "provider": "sampler.Value",
-              "type": "float",
-              "min": 1.3,
-              "max": 1.5
-            }
-          },
-          {
-            "type": "SUN",
-            "location": [0, 0, 0],
-            "rotation": {
-              "provider": "sampler.Uniform3d",
-              "min": [0.0, -0.436332, 3.141593],
-              "max": [0.0, -1.134464, 3.141593]
-            },
-            "cast_shadow": False,
-            "energy": {
-              "provider": "sampler.Value",
-              "type": "float",
-              "min": 1.3,
-              "max": 1.5
-            }
-          },
-        ]
-      }
-    },
-    {
-      "module": "camera.CameraLoader",
-      "config": {
-        "cam_poses": [
-          {
-            "location": [0, 0, 13.35],
-            "rotation": {
-              "value": [0, 0, 0]
-            }
-          },
-          {
-            "location": [0, 2, 13.35],
-            "rotation": {
-              "value": [0, 0, 0]
-            }
-          },
-          {
-            "location": [0, -2, 13.35],
-            "rotation": {
-              "value": [0, 0, 0]
-            }
-          },
-          {
-            "location": [0, 0, 13.35],
-            "rotation": {
-              "value": [0, 0, -1.5707963]
-            }
-          },
-          {
-            "location": [2, 0, 13.35],
-            "rotation": {
-              "value": [0, 0, -1.5707963]
-            }
-          },
-          {
-            "location": [-2, 0, 13.35],
-            "rotation": {
-              "value": [0, 0, -1.5707963]
-            }
-          }
+        {
+          "type": "SUN",
+          "location": [0, 0, 0],
+          "rotation": [-1.5707963268 ,0,0],
+          "cast_shadow": False,
+          "energy": 1
+        }
         ]
       }
     },
     {
       "module": "object.PhysicsPositioning",
       "config": {
-        "min_simulation_time": 4,
-        "max_simulation_time": 15,
+        "min_simulation_time": 10,
+        "max_simulation_time": 11,
         "check_object_interval": 1,
-        "collision_margin": 0.02,
-        "objs_with_mesh_collision_shape": {
-          "provider": "getter.Entity",
-          "conditions": {
-            "cp_physics": False
-          }
-        }
+        "keep_physics": True,
+        "simulation_speed": 10,
+        "collision_shape": "SPHERE"
       }
     },
     {
-      "module": "renderer.RgbRenderer",
+      "module": "renderer.RgbVideoRenderer",
       "config": {
-        "samples":{
-          "provider": "sampler.Value",
-          "type": "int",
-          "min": 65,
-          "max": 100
-        },
+        "samples": 20,
         "use_denoiser": False,
         "diffuse_bounces": 4,
         "glossy_bounces": 4,
-        "max_bounces": 12,
-        "transmission_bounces": 12,
-        "transparency_bounces": 8,
+        "max_bounces": 8,
+        "transmission_bounces": 4,
+        "transparency_bounces": 4,
         "simplify_subdivision_render": 0,
         "bvh_type": "DYNAMIC_BVH",
         "use_spatial_splits": False,
-        "cf_add_side_blur":{
-         "img_blur_kernel_size": {
-           "provider": "sampler.Uniform2d",
-           "min": [5, 5],
-           "max": [15, 15]
-         },
-         "img_blur_type": "GAUSS",
-         "ellipse_mask_width": 1,
-         "ellipse_mask_height": {
-           "provider": "sampler.Value",
-           "type": "float",
-           "min": 0.45,
-           "max": 0.6
-         },
-         "ellipse_mask_position": [0.5, 0.5],
-         "mask_blur_type": "FLAT",
-         "mask_blur_kernel_size": [100, 100]
+        "use_motion_blur": True,
+        "motion_blur_shutter_speed": 0.3,
+        "cf_change_gamma_color":{
+          "gamma_color": [0.056498, 1.10824, 0.0]
         }
       }
     },
     {
-      "module": "writer.YoloAnnotationsWriter",
+      "module": "renderer.SimpleSegMapRenderer",
       "config": {
-          "objs_to_annotate": {
-            "provider": "getter.Entity",
-            "conditions": {
-              "cp_physics": True
-            }
+      }
+    },
+    {
+      "module": "writer.MetaInformationWriter",
+      "config": {
+        "objects": {
+          "provider": "getter.Entity",
+          "conditions": {
+            "cp_physics": True
           }
+        },
+        "attributes_to_write": "cp_volume"
       }
     }
   ]

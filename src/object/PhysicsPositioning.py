@@ -1,3 +1,5 @@
+import time
+
 import bpy
 import mathutils
 import numpy as np
@@ -54,6 +56,7 @@ class PhysicsPositioning(Module):
         self.object_stopped_rotation_threshold = self.config.get_float("object_stopped_rotation_threshold", 0.1)
         self.collision_margin = self.config.get_float("collision_margin", 0.001)
         self.collision_mesh_source = self.config.get_string('collision_mesh_source', 'FINAL')
+        self.time_scale = self.config.get_int("simulation_speed", 1)
         self.steps_per_sec = self.config.get_int("steps_per_sec", 60)
         self.solver_iters = self.config.get_int("solver_iters", 10)
         self.mass_scaling = self.config.get_bool("mass_scaling", False)
@@ -62,6 +65,7 @@ class PhysicsPositioning(Module):
         self.friction = self.config.get_float("friction", 0.5)
         self.angular_damping = self.config.get_float("angular_damping",0.1)
         self.linear_damping = self.config.get_float("linear_damping",0.04)
+        self.keep_physics = self.config.get_bool("keep_physics", False)
         
     def run(self):
         """ Performs physics simulation in the scene. """
@@ -78,12 +82,16 @@ class PhysicsPositioning(Module):
             shift = locations_before_origin_shift[obj] - locations_after_origin_shift[obj]
             origin_shift.update({obj: shift})
 
+        bpy.context.scene.rigidbody_world.time_scale = self.time_scale
         bpy.context.scene.rigidbody_world.steps_per_second = self.steps_per_sec
         bpy.context.scene.rigidbody_world.solver_iterations = self.solver_iters
 
         obj_poses_before_sim = self._get_pose()
         # perform simulation
+        time_start = time.time()
         obj_poses_after_sim = self._do_simulation()
+        print("Baking Finished in: %.4f sec" % (time.time() - time_start))
+
         # reset origin point of all active objects to the total shift location of the 3D cursor
         for obj in get_all_mesh_objects():
             if obj.rigid_body.type == "ACTIVE":
@@ -103,15 +111,16 @@ class PhysicsPositioning(Module):
         # reset 3D cursor location
         bpy.context.scene.cursor.location = mathutils.Vector([0, 0, 0])
 
-        # get current poses
-        curr_pose = self._get_pose()
-        # displace for the origin shift
-        final_poses = {}
-        for obj in curr_pose:
-            final_poses.update({obj: {'location': curr_pose[obj]['location'] + origin_shift[obj], 'rotation': curr_pose[obj]['rotation']}})
-        self._set_pose(final_poses)
+        if not self.keep_physics:
+            # get current poses
+            curr_pose = self._get_pose()
+            # displace for the origin shift
+            final_poses = {}
+            for obj in curr_pose:
+                final_poses.update({obj: {'location': curr_pose[obj]['location'] + origin_shift[obj], 'rotation': curr_pose[obj]['rotation']}})
+            self._set_pose(final_poses)
 
-        self._remove_rigidbody()
+            self._remove_rigidbody()
 
     def _add_rigidbody(self):
         """ Adds a rigidbody element to all mesh objects and sets their type depending on the custom property "physics".
@@ -185,6 +194,7 @@ class PhysicsPositioning(Module):
         point_cache = bpy.context.scene.rigidbody_world.point_cache
         point_cache.frame_start = 1
 
+        bpy.context.scene.render.fps = self.config.get_int("animation_fps", 24)
         min_simulation_time = self.config.get_float("min_simulation_time", 4.0)
         max_simulation_time = self.config.get_float("max_simulation_time", 40.0)
         check_object_interval = self.config.get_float("check_object_interval", 2.0)
@@ -209,8 +219,9 @@ class PhysicsPositioning(Module):
             bpy.context.scene.frame_set(current_frame)
             new_poses = self._get_pose()
 
-            # Free bake (this will not completely remove the simulation cache, so further simulations can reuse the already calculated frames)
-            bpy.ops.ptcache.free_bake({"point_cache": point_cache})
+            if not self.keep_physics:
+                # Free bake (this will not completely remove the simulation cache, so further simulations can reuse the already calculated frames)
+                bpy.ops.ptcache.free_bake({"point_cache": point_cache})
 
             # If objects have stopped moving between the last two frames, then stop here
             if self._have_objects_stopped_moving(old_poses, new_poses):

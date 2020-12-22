@@ -1,4 +1,4 @@
-# Args: <cam_file> <output_dir> <obj_file>
+# Args:  <obj_file> <output_dir>
 {
   "version": 3,
   "setup": {
@@ -17,11 +17,11 @@
       }
     },
     {
-      "module": "constructor.GranulatumGenerator",
+      "module": "constructor.PelletGenerator",
       "config":{
         "use_file": False,
         "keep_objects": True,
-        "amount": 100
+        "amount": 400
       }
     },
     {
@@ -57,8 +57,8 @@
         },
         "pos_sampler":{
           "provider":"sampler.Uniform3d",
-          "max":[9, 9, 4],
-          "min":[-9, -9, 100]
+          "max":[13, 13, 4],
+          "min":[-13, -13, 100]
         },
         "rot_sampler":{
           "provider":"sampler.UniformSO3"
@@ -75,8 +75,27 @@
             "type": "MESH"
           }
         },
-        "scale": [20, 4, 20],
+        "scale": [30, 4, 30],
         "hide_render": True
+      }
+    },
+    {
+      "module": "camera.CameraLoader",
+      "config": {
+        "cam_poses": [
+        {
+          "location": [0, 0, 13.35],
+          "rotation": {
+            "value": [0, 0, 0]
+          }
+        },
+        {
+          "location": [0, 2, 13.35],
+          "rotation": {
+            "value": [0, 0, 0]
+          }
+        }
+        ]
       }
     },
     {
@@ -86,6 +105,7 @@
         "max_simulation_time": 15,
         "check_object_interval": 1,
         "collision_margin": 0.02,
+        "update_object_poses": False,
         "objs_with_mesh_collision_shape": {
           "provider": "getter.Entity",
           "conditions": {
