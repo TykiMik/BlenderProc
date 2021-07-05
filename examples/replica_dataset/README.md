@@ -35,15 +35,16 @@ python scripts/visHdf5Files.py example/replica_dataset/0.hdf5
 ### Global
 
 ```yaml
-"module": "main.Initializer",
-"config": {
-  "global": {
-    "output_dir": "<args:1>",
-    "data_set_name": "office_1",
-    "data_path": "<args:0>",
-    "pixel_aspect_x": 1.333333333
-  }
-},
+{
+    "module": "main.Initializer",
+    "config": {
+      "global": {
+        "output_dir": "<args:1>",
+        "data_set_name": "office_1",
+        "data_path": "<args:0>"
+      }
+    }
+}
 ```
 
 Note that `"data_set_name": "office_1"` is a replica room you want to render. This line can be replace with:
@@ -57,13 +58,12 @@ As before all these values are stored in the GlobalStorage and are only used if 
 {
   "module": "loader.ReplicaLoader",
   "config": {
-    "use_smooth_shading": "True",
-    "use_ambient_occlusion": "True"
+    "use_smooth_shading": "True"
   }
-},
+}
 ```
 
-`loader.ReplicaLoader` handles importing objects from a given path. here we are using ambient occlusion to lighten up the scene, and enabling smooth shading on all surfaces, instead of flat shading.
+`loader.ReplicaLoader` handles importing objects from a given path. Here we are using smooth shading on all surfaces, instead of flat shading.
 
 ### Floor extractor
 
@@ -76,7 +76,7 @@ As before all these values are stored in the GlobalStorage and are only used if 
     "compare_angle_degrees" : 7.5, # max angle difference to up facing polygons
     "compare_height": 0.15  # height, which is allowed for polygons to be away from the height level in up and down dir.
   }
-},
+}
 ```
 
 `object.FloorExtractor` searches for the specified object and splits the surfaces which point upwards at a specified level away.
@@ -87,7 +87,7 @@ As before all these values are stored in the GlobalStorage and are only used if 
 {
   "module": "camera.ReplicaCameraSampler",
   "config": {
-    "default_cam_param": {
+    "intrinsics": {
       "pixel_aspect_x": 1.333333333
     },
     "is_replica_object": True,
@@ -111,7 +111,7 @@ As before all these values are stored in the GlobalStorage and are only used if 
       },
     }]
   }
-},
+}
 ```
 
 `camera.ReplicaCameraSampler` samples multiple camera poses per every imported room with camera-object collision check and obstacle check.
@@ -124,19 +124,14 @@ As before all these values are stored in the GlobalStorage and are only used if 
     "selector": {
       "provider": "getter.Material",
       "conditions": {
-        "name": "ReplicaMaterial"
+        "name": "ply_material"
       }
     },
     "cf_change_to_vertex_color": "Col"
   }
-},
+}
 ``` 
 The `materials.Manipulator` changes the material of the Replica objects so that the vertex color is renderer, this makes it possible to render colors on Replica scenes.
-##### Important: This does not mean that we load the complex texture files, we only use the low res vertex color for color rendering.
+**Important: This does not mean that we load the complex texture files, we only use the low res vertex color for color rendering.**
 
 If you are in need of high-res color images, do we propose that you, yourself can try to implement the texture importer for the replica dataset.
-
-## More examples
-
-* [sung_basic](../suncg_basic): Rendering SUNCG scenes with fixed camera poses.
-* [suncg_with_cam_sampling](../suncg_with_cam_sampling): Rendering SUNCG scenes with dynamically sampled camera poses.

@@ -38,13 +38,12 @@ Without this idea it would not be possible to render the correct class.
 {
   "module": "loader.BlendLoader",
   "config": {
-    "path": "<args:1>",
-    "load_from": "/Object"  # load all objects from the scene file
+    "path": "<args:1>"
   }
-},
+}
 ```
 
-This loads the `.blend` file, it extracts hereby only the `/Objects` from the file, not all information stored in this `.blend` file.
+This loads the `.blend` file, it extracts hereby only the mesh objects from the file, not all information stored in this `.blend` file.
 
 ### WorldManipulator
 
@@ -103,8 +102,3 @@ Before this happens there are two modules executed on the output of the `RgbRend
 Each pixel corresponding to the Z-Buffer value, this is however not the same as `depth` image. 
 We therefore here convert this image into a `depth` image by using the `Dist2Depth` module.
 The `TrimRedundantChannels` decreases the amount of channels in the `distance/depth` image to 1 instead of 3.
-
-## More examples
-* [coco_annotations](../coco_annotations): Produce instance segmentations in coco format
-* [suncg_basic](../suncg_basic): Rendering SUNCG scenes with fixed camera poses.
-* [suncg_with_cam_sampling](../suncg_with_cam_sampling): Rendering SUNCG scenes with dynamically sampled camera poses.

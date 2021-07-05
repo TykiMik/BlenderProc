@@ -10,10 +10,12 @@ if not dir in sys.path:
     sys.path.append(dir)
 
 # Add path to custom packages inside the blender main directory
-if platform == "linux" or platform == "linux2" or platform == "win32":
-    packages_path = os.path.abspath(os.path.join(os.path.dirname(sys.executable), "custom-python-packages"))
+if platform == "linux" or platform == "linux2":
+    packages_path = os.path.abspath(os.path.join(os.path.dirname(sys.executable), "..", "..", "..", "custom-python-packages"))
 elif platform == "darwin":
-    packages_path = os.path.abspath(os.path.join(os.path.dirname(sys.executable), "..", "Resources", "custom-python-packages"))
+    packages_path = os.path.abspath(os.path.join(os.path.dirname(sys.executable), "..", "..", "..", "..", "Resources", "custom-python-packages"))
+elif platform == "win32":
+    packages_path = os.path.abspath(os.path.join(os.path.dirname(sys.executable), "..", "..", "..", "custom-python-packages"))
 else:
     raise Exception("This system is not supported yet: {}".format(platform))
 sys.path.append(packages_path)
@@ -28,12 +30,18 @@ if "--batch-process" in argv:
 argv = argv[argv.index("--") + 1:]
 working_dir = os.path.dirname(os.path.abspath(__file__))
 
+from src.utility.SetupUtility import SetupUtility
+# Setup general required pip packages e.q. pyyaml
+SetupUtility.setup_pip([])
+
 from src.main.Pipeline import Pipeline
 from src.utility.Utility import Utility
 
 config_path = argv[0]
+temp_dir = argv[1]
+
 if batch_index_file == None:
-    pipeline = Pipeline(config_path, argv[1:], working_dir)
+    pipeline = Pipeline(config_path, argv[2:], working_dir, temp_dir)
     pipeline.run()
 else:
     with open(Utility.resolve_path(batch_index_file), "r") as f:
@@ -41,5 +49,5 @@ else:
 
         for line in lines:
             args = line.split(" ")
-            pipeline = Pipeline(config_path, args, working_dir)
+            pipeline = Pipeline(config_path, args, working_dir, temp_dir)
             pipeline.run()

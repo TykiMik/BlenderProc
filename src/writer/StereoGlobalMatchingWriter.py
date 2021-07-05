@@ -1,3 +1,5 @@
+from src.utility.SetupUtility import SetupUtility
+SetupUtility.setup_pip(["Pillow", "opencv-contrib-python"])
 
 import os
 from math import tan
@@ -11,6 +13,7 @@ from src.renderer.RendererInterface import RendererInterface
 from src.utility.BlenderUtility import load_image
 from src.utility.SGMUtility import fill_in_fast
 from src.utility.SGMUtility import resize
+from src.utility.Utility import Utility
 
 
 class StereoGlobalMatchingWriter(RendererInterface):
@@ -18,38 +21,47 @@ class StereoGlobalMatchingWriter(RendererInterface):
 
     **Configuration**:
 
-    .. csv-table::
-       :header: "Parameter", "Description"
+    .. list-table:: 
+        :widths: 25 100 10
+        :header-rows: 1
 
-       "infer_focal_length_from_fov", "If true, then focal length would be calculated from the field of view angle, "
-                                      "otherwise the value of the focal length would be read from the config parameter: "
-                                      "'focal_length'. Type: bool. Default: False"
-       "disparity_filter", "Applies post-processing of the generated disparity map using WLS filter. Type: bool. "
-                           "Default: True"
-       "depth_completion", "Applies basic depth completion using image processing techniques. Type: bool. Default: True"
-       "focal_length", "Focal length used in the depth calculation step, should be set if 'infer_focal_length_from_fov' "
-                       "is set to false. Type: float. Default: 0.0"
-
-       "window_size", "Semi-global matching kernel size. Should be an odd number. Type: int. Optional. Default: 7"
-       "num_disparities", "Semi-global matching number of disparities. Should be > 0 and divisible by 16. Type: int. "
-                          "Default: 32"
-       "min_disparity", "Semi-global matching minimum disparity. Type: int. Optional. Default: 0"
-       "avoid_rendering", "If true, exit. Type: bool. Optional. Default: False."
-       "output_disparity", "Additionally outputs the disparity map. Type: bool. Default: False"
-       "rgb_output_key", "The key for the rgb data in the output. Type: string. Optional. default: colors."
-       "resolution_x", "The resolution of the camera in x-direction. Necessary when checking, if there are obstacles "
-                       "in front of the camera. Type: int. Optional. Default: 512."
-       "resolution_y", "The resolution of the camera in y-direction. Necessary when checking, if there are obstacles "
-                       "in front of the camera. Type: int. Optional. Default: 512."
-       "pixel_aspect_x", "The aspect ratio of the camera's viewport. Necessary when checking, if there are obstacles "
-                         "in front of the camera. Type: float. Optional. Default: 1."
-
+        * - Parameter
+          - Description
+          - Type
+        * - infer_focal_length_from_fov
+          - If true, then focal length would be calculated from the field of view angle, otherwise the value of the
+            focal length would be read from the config parameter: 'focal_length'. Default: False
+          - bool
+        * - disparity_filter
+          - Applies post-processing of the generated disparity map using WLS filter. Default: True
+          - bool
+        * - depth_completion
+          - Applies basic depth completion using image processing techniques. Default: True
+          - bool
+        * - focal_length
+          - Focal length used in the depth calculation step, should be set if 'infer_focal_length_from_fov' is set
+            to false. Default: 0.0
+          - float
+        * - window_size
+          - Semi-global matching kernel size. Should be an odd number. Optional. Default: 7
+          - int
+        * - num_disparities
+          - Semi-global matching number of disparities. Should be > 0 and divisible by 16. Default: 32
+          - int
+        * - min_disparity
+          - Semi-global matching minimum disparity. Optional. Default: 0
+          - int
+        * - output_disparity
+          - Additionally outputs the disparity map. Default: False
+          - bool
+        * - rgb_output_key
+          - The key for the rgb data in the output. Optional. default: colors.
+          - string
     """
 
     def __init__(self, config):
         RendererInterface.__init__(self, config)
 
-        self._avoid_rendering = config.get_bool("avoid_rendering", False)
         self.rgb_output_key = self.config.get_string("rgb_output_key", "colors")
         if self.rgb_output_key is None:
             raise Exception("RGB output is not registered, please register the RGB renderer before this module.")
@@ -133,8 +145,8 @@ class StereoGlobalMatchingWriter(RendererInterface):
         2. For each frame, load left and right images and call the `sgm()` methode.
         3. Write the results to a numpy file.
         """
-        if self._avoid_rendering:
-            print("Avoid rendering is on, no output produced!")
+        if self._avoid_output:
+            print("Avoid output is on, no output produced!")
             return
 
         if GlobalStorage.is_in_storage("renderer_distance_end"):
@@ -143,21 +155,15 @@ class StereoGlobalMatchingWriter(RendererInterface):
             raise RuntimeError("A distance rendering has to be executed before this module is executed, "
                                "else the `renderer_distance_end` is not set!")
 
-        self.rgb_output_path = self._find_registered_output_by_key(self.rgb_output_key)["path"]
+        self.rgb_output_path = Utility.find_registered_output_by_key(self.rgb_output_key)["path"]
 
         # Collect camera and camera object
         cam_ob = bpy.context.scene.camera
         cam = cam_ob.data
 
-        if not 'loaded_resolution' in cam:
-            self.width = self.config.get_int("resolution_x", 512)
-            self.height = self.config.get_int("resolution_y", 512)
-            bpy.context.scene.render.pixel_aspect_x = self.config.get_float("pixel_aspect_x", 1)
-        elif 'loaded_resolution' in cam:
-            self.width, self.height = cam['loaded_resolution']
-        else:
-            raise Exception("Resolution missing in stereo global matching!")
-        print('Resolution: {}, {}'.format(bpy.context.scene.render.resolution_x, bpy.context.scene.render.resolution_y))
+        self.width = bpy.context.scene.render.resolution_x
+        self.height = bpy.context.scene.render.resolution_y
+        print('Resolution: {}, {}'.format(self.width, self.height))
 
         self.baseline = cam.stereo.interocular_distance
         if not self.baseline:
@@ -189,8 +195,7 @@ class StereoGlobalMatchingWriter(RendererInterface):
 
             if self.config.get_bool("output_disparity", False):
                 np.save(os.path.join(self.output_dir, "disparity_%04d") % frame, disparity)
-        self._register_output("stereo-depth_", "stereo-depth", ".npy", "1.0.0")
+        Utility.register_output(self._determine_output_dir(), "stereo-depth_", "stereo-depth", ".npy", "1.0.0")
         if self.config.get_bool("output_disparity", False):
-            self._register_output("disparity_", "disparity", ".npy", "1.0.0")
-
+            Utility.register_output(self._determine_output_dir(), "disparity_", "disparity", ".npy", "1.0.0")
 

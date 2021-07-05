@@ -7,7 +7,8 @@
       "h5py",
       "scikit-image",
       "pypng==0.0.20",
-      "scipy==1.2.2"
+      "scipy==1.2.2",
+      "matplotlib==2.2.4"
     ]
   },
   "modules": [
@@ -180,6 +181,7 @@
           }
         },
         "cp_physics": False,
+        "cp_physics_collision_shape": "BOX",
         "cp_category_id": 333,
         "cf_add_modifier": {
           "name": "Solidify",
@@ -273,17 +275,11 @@
         "max_simulation_time": 10,
         "check_object_interval": 1,
         "solver_iters": 25,
-        "steps_per_sec": 300,
+        "substeps_per_frame": 50,
         "collision_margin": 0.0005,
         "friction": 100.0,
         "linear_damping": 0.99,
-        "angular_damping": 0.99,
-        "objs_with_box_collision_shape": {
-          "provider": "getter.Entity",
-          "conditions": {
-            "name": "ground_plane.*"
-          }
-        }
+        "angular_damping": 0.99
       }
     },
     {
@@ -373,6 +369,8 @@
       "config": {
         "dataset": "<args:1>",
         "append_to_existing_output": True,
+        "depth_scale": 0.1,
+        "ignore_dist_thres": 5.,
         "postprocessing_modules": {
           "distance": [
             {"module": "postprocessing.Dist2Depth"}

@@ -25,6 +25,7 @@ if __name__ == "__main__":
             distance_path = image_path.replace("colors", "distance")
             depth_path = image_path.replace("colors", "depth")
             seg_path = image_path.replace("colors", "segmap")
+            diffuse_path = image_path.replace("colors", "diffuse")
             used_imgs = []
             if os.path.exists(image_path):
                 used_imgs.append(plt.imread(image_path))
@@ -38,6 +39,8 @@ if __name__ == "__main__":
                 raise Exception("This can only work with one of the two, either distance or depth!")
             if os.path.exists(seg_path):
                 used_imgs.append(plt.imread(seg_path))
+            if os.path.exists(diffuse_path):
+                used_imgs.append(plt.imread(diffuse_path))
             if used_imgs:
                 img_size = used_imgs[0].shape
                 if len(used_imgs) == 1:
@@ -87,9 +90,12 @@ if __name__ == "__main__":
             if file_path.endswith(".png"):
                 convert_png_to_multiples(file_path, file_path)
             elif file_path.endswith(".hdf5"):
-                tmp_path = "/dev/shm"
-                if not os.path.exists(tmp_path):
-                    tmp_path = "/tmp/"
+                if sys.platform != "win32":
+                    tmp_path = "/dev/shm"
+                    if not os.path.exists(tmp_path):
+                        tmp_path = "/tmp/"
+                else:
+                    tmp_path = os.getenv("TEMP")
                 tmp_path = os.path.join(tmp_path, "blender_proc_vis_gen_image")
                 if os.path.exists(tmp_path):
                     for file in glob.glob(os.path.join(tmp_path, "*")):

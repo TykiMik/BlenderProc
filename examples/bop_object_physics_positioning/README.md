@@ -69,7 +69,9 @@ To aggregate data and labels over multiple scenes, simply run the script multipl
           "cp_physics": True
         }
       }
-    },
+    }
+```
+```yaml
     {
       "module": "loader.BopLoader",
       "config": {
@@ -83,7 +85,9 @@ To aggregate data and labels over multiple scenes, simply run the script multipl
         },
         "cf_set_shading": "SMOOTH"
       }
-    },
+    }
+```
+```yaml
     {
       "module": "loader.BopLoader",
       "config": {
@@ -98,7 +102,7 @@ To aggregate data and labels over multiple scenes, simply run the script multipl
         },
         "cf_set_shading": "SMOOTH"
       }
-    },
+    }
 ```
 
 * Here we are sampling BOP objects from 3 different datasets.
@@ -127,7 +131,9 @@ To aggregate data and labels over multiple scenes, simply run the script multipl
           "max": [0.9, 0.9, 0.9, 1.0]
         }
       }
-    },
+    }
+```
+```yaml
     {
       "module": "manipulators.MaterialManipulator",
       "config": {
@@ -158,7 +164,7 @@ To aggregate data and labels over multiple scenes, simply run the script multipl
           "max": 1.0
         }
       }
-    },
+    }
 ```
 
 * Sample grey colors for T-LESS object's materials using `sampler.Color` Provider.
@@ -213,7 +219,9 @@ To aggregate data and labels over multiple scenes, simply run the script multipl
         }
         ]
       }
-    },
+    }
+```
+```yaml
     {
       "module": "manipulators.EntityManipulator",
       "config": {
@@ -224,18 +232,19 @@ To aggregate data and labels over multiple scenes, simply run the script multipl
           }
         },
         "cp_physics": False,
+        "cp_physics_collision_shape": "BOX",
         "cp_category_id": 333
       }
-    },
+    }
 ```
 
-* Construct minimal 2m x 2m x 2m room from 6 planes
+* Construct minimal 4m x 4m x 4m room from 6 planes
 * Set `"cp_physics": False` to fix the planes during any simulations
+* Give ground planes a BOX collision shape since they behave better.
 
 ### Material Manipulator
 
 ```yaml
-
     {
       "module": "manipulators.MaterialManipulator",
       "config": {
@@ -259,7 +268,7 @@ To aggregate data and labels over multiple scenes, simply run the script multipl
           }
         }
       }
-    },
+    }
 ```
 
 * For the top light plane, switch to an Emission shader and sample `color` and `strength` values of the emitted light.
@@ -272,7 +281,7 @@ To aggregate data and labels over multiple scenes, simply run the script multipl
       "config": {
         "folder_path": "<args:3>"
       }
-    },
+    }
 ```
 
 * Load a random CC0Texture that was downloaded from https://cc0textures.com/
@@ -300,7 +309,7 @@ To aggregate data and labels over multiple scenes, simply run the script multipl
           }
         }
       }
-    },
+    }
 ```
 
 * Sample a CCTextures material once for all loaded ground_planes.
@@ -334,7 +343,7 @@ To aggregate data and labels over multiple scenes, simply run the script multipl
           "provider":"sampler.UniformSO3"
         }
       }
-    },
+    }
 ```
 
 * Samples initial object poses before applying physics
@@ -350,27 +359,20 @@ To aggregate data and labels over multiple scenes, simply run the script multipl
         "max_simulation_time": 10,
         "check_object_interval": 1,
         "solver_iters": 25,
-        "steps_per_sec": 100,
+        "substeps_per_frame": 20,
         "friction": 100.0,
         "linear_damping": 0.99,
-        "angular_damping": 0.99,
-        "objs_with_box_collision_shape": {
-          "provider": "getter.Entity",
-          "conditions": {
-            "name": "ground_plane.*"
-          }
-        }
+        "angular_damping": 0.99
       }
-    },
+    }
 ```
 
 * Performs physics simuluation, i.e. dropping objects on the floor.
 * `"min_simulation_time", "max_simulation_time"` in seconds
 * `"check_object_interval"` after which objects are checked to stand still  
 * `"solver_iters": 25` increase if physics glitches occur.
-* `"steps_per_sec": 100` increase if physics glitches occur.
+* `"substeps_per_frame": 20` increase if physics glitches occur.
 * `"friction": 100.0, "linear_damping": 0.99, "angular_damping": 0.99` ensure inert physics properties so that objects don't spread too much
-* Give ground planes a BOX collision shape since they behave better using `"objs_with_box_collision_shape"`
 
 ### Light Sampler
 
@@ -399,7 +401,7 @@ To aggregate data and labels over multiple scenes, simply run the script multipl
         }
         ]
       }
-    },
+    }
 ```
 
 * Samples an additional point light source (next to ceiling) in a `"sampler.Shell"` around the origin with a `"sampler.Color"` provider. 
@@ -455,7 +457,7 @@ To aggregate data and labels over multiple scenes, simply run the script multipl
         }
         ]
       }
-    },
+    }
 ```
 
 * Samples `"number_of_samples": 10` camera poses, where the camera location is sampled using a `sampler.Shell` Provider with `"uniform_elevation"` sampling. 
@@ -473,7 +475,7 @@ To aggregate data and labels over multiple scenes, simply run the script multipl
         "render_distance": True,
         "image_type": "JPEG"
       }
-    },
+    }
 ```
 * Renders RGB using 50 `"samples"`, and saves them as jpg images with 0.95 quality. Also outputs distance images. 
 
@@ -485,6 +487,7 @@ To aggregate data and labels over multiple scenes, simply run the script multipl
       "config": {
         "dataset": "<args:1>",
         "append_to_existing_output": True,
+        "ignore_dist_thres": 10.,
         "postprocessing_modules": {
           "distance": [
             {"module": "postprocessing.Dist2Depth"}
@@ -497,10 +500,11 @@ To aggregate data and labels over multiple scenes, simply run the script multipl
 * Saves all pose and camera information that is provided in BOP datasets.
 * Only considers objects from the given `"dataset": "<args:1>"`
 * `"append_to_existing_output"` means that if the same output folder is chosen, data will be accumulated and not overwritten
+* `"ignore_dist_thres"` do not write object annotations for objects further than 10 meters (because of potential physics glitches)
 * We use a `postprocessing.Dist2Depth` to convert the distance images from Blender to actual depth images.
 
 ## More examples
 
-* [bop_object_pose_sampling](../bop_object_pose_sampling): Sample BOP object and camera poses.
-* [bop_scene_replication](../bop_scene_replication): Replicate the scenes and cameras from BOP datasets in simulation.
-* [bop_object_on_surface_sampling](../bop_object_on_surface_sampling): Sample upright poses on plane and randomize materials
+* [bop_object_pose_sampling](../bop_object_pose_sampling/README.md): Sample BOP object and camera poses.
+* [bop_scene_replication](../bop_scene_replication/README.md): Replicate the scenes and cameras from BOP datasets in simulation.
+* [bop_object_on_surface_sampling](../bop_object_on_surface_sampling/README.md): Sample upright poses on plane and randomize materials

@@ -1,12 +1,132 @@
 
 # Planned Features
 
+- Adding a complete python API and phasing out the `.yaml` files (Goal for 2.0.0)
 - Add support for all YCB objects (not just BOP)
 - Add support for more object datasets (ideas are welcomed, just open an issue with a dataset you want to see integrated)
-- Add support for BlenderKit (download is done, easy using is still missing)
 - Improve the documentation 
 
 # Version History
+
+## Version 1.11.1 18th May 2021
+- fix a bug on mac os, where the blender python path has changed
+- fix a bug in the BlenderLoaderModule which caused that the setting of custom properties was not successful
+
+## Version 1.11.0 11th May 2021
+- BlenderProc now can be executed via a python script (experimental, not all modules are supported yet)
+- python API extension for the following modules:
+  - the Entity & Material Manipulation
+  - the WriterUtility, Hdf5Writer, BopWriterUtility, CocoWriterUtility
+  - the PostProcessing
+  - the physic positioning, PoseSampler
+- debugging can now be done via the command line, by just typing --debug after a BlenderProc call
+- add automatic convex decomposition to speed up physics, object decompositions will be cached
+- add a jupyter notebook example for google colab
+- add a BasicEmptyInitializer module, which helps creating simple empty objects, these can be used for using a depth of field
+- add a depth_of_field option to the CameraInterface (thanks to cuteday)
+- add a hide module, so that certain objects can be hidden in a selected range of frames (thanks to Sainan Liu)
+- add an option to change the computation type via the config
+- blender 2.92 changed depth and distance once again, we use it correctly now and added an explanation
+- added a diffuse rendering mode
+- added a key frame API
+- added a default config, which can be easily changed
+- ObjectPoseSampler now can check also against only a limited set of objects
+- ObjectReplacer now stops if no objects are left to replace
+- SurfaceLighting now reuses the TextureLess material
+- preloading in CCTexture now also works perfectly for textures which use an alpha texture
+- python packages now are installed by specifying the required packages at the top of each file
+- added an example for pasting objects onto random backgrounds
+- added a flag to merge BlenderKit objects, while loading, they will be named after the blenderkit file
+- reintroduce persistent transformation scaling to improve stability
+- improve the clean up at the start of BlenderProc
+- fixed a bug in the Front3DLoader, which avoided the correct setting of the custom properties
+- fixed a bug with the once_for_all mode for the randomize materials fct.
+- add a simple rerun script to show how BlenderProc is used for creating a diverse dataset
+- switch to blender 2.92
+
+## Version 1.10.0 24th February 2021
+- rewritten the `BlendLoader`, which is now able to only load objects of a given type, this will break existing config files as the `load_from` parameter has been replaced by `datablocks` and `obj_types`
+- the `MaterialManipulator` can now overlay/mix a texture with a selected material
+- the `MaterialManipulator` can now mix/add a material with another selected material, ideal for creating surface imperfections on other materials
+- the `MaterialManipulator` can now add a layer of dust on materials, which simulates dust flakes on top of the object, there also exists now an example for it
+- `amount_of_repetitions` can now be used with providers  
+- full integration of the blenderkit module, including modules and textures with an example
+- `LoaderInterface` now offers an auto shading mode
+- the `CCMaterialLoader` uses now a preselected list of probably useful materials by default to avoid non tileable materials
+- restructure loaders and move their functionality to the utilities (necessary for the API changes for 2.0.0)
+
+## Version 1.9.0 10th February 2021
+- all `Loader` now support setting the `add_material_properties` of the newly loaded objects
+- each new `.hdf5` file, will contain the git commit hash of BlenderProc
+- introduce `LightUtility` -> this fulfills our long time goal giving BlenderProc a python API
+- changed the default stereo mode from `OFFAXIS` to `PARALLEL`
+- adapt to the changes made to 3D Front, as 3D Front does not have a version number, we support the newest version and a version from Summer 2020, if you have errors please open an issue
+- `getter.Material` can now return all materials of a list of objects, selected via the `getter.Entity`
+- add a `cf_add_*` fct to the MaterialManipulator, which works similar to the `cf_set_*` fct.
+- add `check_empty` to `getter.Entity` and to `getter.Material` to throw an error if the returned list is empty
+- added a `cf_add_uv_mapping/forced_recalc_of_uv_maps` option to force to recalculate the uv map of materials, which already have a uv map
+- added option that randomized materials in `cf_randomize_materials` are added to objects without any materials
+- change that `cf_randomize_materials` inside the `EntityManipulator` now deals with lists and not single elements as before
+- add auto download for the imageio library, if that fails an exception is thrown with instructions on how to do this yourself
+- `CameraInterface` now supports setting poses for a certain frame -> also needed for the python API
+- changed the `depth_scale` default value in the BopWriter from `0.1` to `1.0`, added an option to change via the config
+- changed the `ignore_dist_thres` default value in the BopWriter from `5.0` to `100.0`
+- improved the ShapeNet example, by adding a ShapeNetWriter, which saves which object was used in the `.hdf5` container
+- fixes a bug with the separation of ceilings and floor objects in SceneNet scenes 
+- fix a bug, where the `add_alpha_channel_to_texture` fct. couldn't deal with empty material sockets
+- fix the `pyhsics_positioning` example by using the `collision_shape="MESH"`
+- fix a bug, where empty material_sockets would have been returned in the `getter.Material`
+- fix `vis_coco_annotation` script, didn't work anymore after the segmentation map rewrite
+
+## Version 1.8.2: 27th January 2021
+- added stereo mode to SegMapRenderer
+- switched to using imageio for reading images, as the blender image loading API does not support .exr files written in stereo mode
+- added option to write world-to-cam transformations to the BopWriter
+- CocoAnnotationWriter does now in the polygon format not write empty segmentation lists anymore and uses iscrowd:0
+- type hints are now added to the generated documentation
+- extracted reusable rendering code from the renderer modules into utility classes 
+
+## Version 1.8.1: 14th January 2021
+- fixed a bug in the WriterInterface
+- fixed cc_texture downloader script in the case of weird urls
+- fixed creating the ceiling when there are rounding errors in the vertices coordinates
+
+## Version 1.8.0: 11th December 2020
+- massively improve the documentation, by adding using github pages for our documentation: https://dlr-rm.github.io/BlenderProc/index.html
+- add a RandomRoomConstructor: 
+  - This module can generate random floor plans of single rooms, with arbitrary extrusions.
+  - It can also randomly place loaded objects without collision inside of the room
+  - By using CCTexture it is also possible to assign random materials to the floor, wall and ceiling
+- remove the SceneNetLighting module and replace it with the SurfaceLighting module, to make it more general
+- add support for the haven websites and add an example and corresponding loaders:
+  - The haven environment website: https://hdrihaven.com/
+  - The haven model website: https://3dmodelhaven.com/
+  - The haven texture website: https://texturehaven.com/
+- add option to the CameraSampler to ensure that a certain object is always in the camera view
+- improve the FloorExtractor to extract the floor and ceiling in SceneNet and other scenarios
+- improve the skin tones for AMASSLoader
+- add a proper scaling to the ikea dataset, by converting all files into SI units
+- fix the ikea dataset downloading, by removing and splitting broken pieces, we advise to redownload the dataset
+
+## Version 1.7.0: 1st December 2020
+- switch to blender 2.91
+- added an example of how to set object poses via a transformation matrix and set camera extrinsics / intrinsics via a transformation matrix and a K matrix
+- added camera utility class which makes it easier to set and retrieve intrinsics via any K matrix
+- added loader for Pix3D dataset
+- added loader for AMASS dataset
+- added loader for the ikea dataset
+- added community driven support for Windows
+- added motion blur and rolling shutter support
+- fixed collision checks between meshes, so the ObjectPoseSampler is not generating colliding object poses anymore
+- fixed cleanup of temporary directories in the case of an error
+- set pixel origin to the center of a pixel, slightly affecting intrinsics and depth outputs
+- fixed coco annotations if background is not visible
+- added support for transparent background
+- fixed wrong image size in coco annotations
+- fixed blender proc if non-english language is configured
+- when loading ply files a default material is now added
+- fixed setting matrix_world via the entity manipulator
+- fixed the scenenet examples (corrects physics positioning and camera sampling)
 
 ## Version 1.6.1: 25th August 2020
 - fixed bbox computation in the Coco Annotations

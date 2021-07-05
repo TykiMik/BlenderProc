@@ -46,13 +46,14 @@ python scripts/visHdf5Files.py example/bop_scene_replication/0.hdf5
     {
       "module": "loader.BopLoader",
       "config": {
+        "source_frame": ["X", "-Y", "-Z"],
         "bop_dataset_path": "<args:0>/<args:1>",
         "mm2m": True,
         "split": "test", # careful, some BOP datasets only have test sets
         "scene_id": 1,
         "model_type": ""
       }
-    },
+    }
 ```
 
 If `scene_id` is specified, BopLoader recreates the specified scene of the BOP dataset specified by `bop_dataset_path`. All camera poses and intrinsics from the specified scene are also loaded.  
@@ -61,5 +62,5 @@ For some BOP datasets you can choose the `model_type`, e.g. `reconst` or `cad` i
 
 ## More examples
 
-* [bop_object_pose_sampling](../bop_object_pose_sampling): More on sampling objects, cameras and lights.
-* [bop_object_physics_positioning](../bop_object_physics_positioning): Drop BOP objects on planes and randomize materials
+* [bop_object_pose_sampling](../bop_object_pose_sampling/README.md): More on sampling objects, cameras and lights.
+* [bop_object_physics_positioning](../bop_object_physics_positioning/README.md): Drop BOP objects on planes and randomize materials

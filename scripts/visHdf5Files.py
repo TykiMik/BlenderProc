@@ -6,14 +6,11 @@ from matplotlib import pyplot as plt
 import sys
 import json
 
-sys.path.append(os.path.join(os.path.dirname(__file__)))
-from utils import flow_to_rgb
-
 parser = argparse.ArgumentParser("Script to visualize hdf5 files")
 
 parser.add_argument('hdf5_paths', nargs='+', help='Path to hdf5 file/s')
 parser.add_argument('--keys', nargs='+', help='Keys that should be visualized. If none is given, all keys are visualized.', default=None)
-parser.add_argument('--rgb_keys', nargs='+', help='Keys that should be interpreted as rgb data.', default=["colors", "normals"])
+parser.add_argument('--rgb_keys', nargs='+', help='Keys that should be interpreted as rgb data.', default=["colors", "normals", "diffuse"])
 parser.add_argument('--flow_keys', nargs='+', help='Keys that should be interpreted as optical flow data.', default=["forward_flow", "backward_flow"])
 parser.add_argument('--segmap_keys', nargs='+', help='Keys that should be interpreted as segmentation data.', default=["segmap"])
 parser.add_argument('--segcolormap_keys', nargs='+', help='Keys that point to the segmentation color maps corresponding to the configured segmap_keys.', default=["segcolormap"])
@@ -29,6 +26,14 @@ def vis_data(key, data, full_hdf5_data, file_label):
         plt.title("{} in {}".format(key, file_label))
 
     if key in args.flow_keys:
+        try:
+            # This import here is ugly, but else everytime someone uses this script it demands opencv and the progressbar
+            sys.path.append(os.path.join(os.path.dirname(__file__)))
+            from utils import flow_to_rgb
+        except ImportError:
+            raise ImportError("Using .hdf5 containers, which contain flow images needs opencv-python and progressbar "
+                              "to be installed!")
+
         # Visualize optical flow
         plt.imshow(flow_to_rgb(data), cmap='jet')
     elif key in args.segmap_keys:
@@ -89,7 +94,14 @@ def vis_file(path):
 
                 # Visualize every key
                 for key in keys:
-                    vis_data(key, np.array(data[key]), data, os.path.basename(path))
+                    value = np.array(data[key])
+                    # Check if it is a stereo image
+                    if len(value.shape) >= 3 and value.shape[0] == 2:
+                        # Visualize both eyes separately
+                        for i, img in enumerate(value):
+                            vis_data(key, img, data, os.path.basename(path) + (" (left)" if i == 0 else " (right)"))
+                    else:
+                        vis_data(key, value, data, os.path.basename(path))
 
         else:
             print("The path is not a file")

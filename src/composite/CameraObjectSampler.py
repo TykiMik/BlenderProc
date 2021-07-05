@@ -1,7 +1,7 @@
 import bpy
 
 from src.main.Module import Module
-from src.utility.BlenderUtility import get_all_mesh_objects
+from src.utility.BlenderUtility import get_all_blender_mesh_objects
 from src.utility.Utility import Utility
 
 
@@ -10,13 +10,25 @@ class CameraObjectSampler(Module):
 
     **Configuration**:
 
-    .. csv-table::
-       :header: "Parameter", "Description"
+    .. list-table:: 
+        :widths: 25 100 10
+        :header-rows: 1
 
-       "total_noof_cams", "Total number of sampled cameras. Type: int. Default: 10"
-       "noof_cams_per_scene", "Number of sampled cameras after which object poses are re-sampled. Type: int. Default: 5"
-       "object_pose_sampler", "The config module based on the object.ObjectPoseSampler Type: dict. Default: {}"
-       "camera_pose_sampler", "The config module based on the camera.CameraSampler Type: dict. Default: {}"
+        * - Parameter
+          - Description
+          - Type
+        * - total_noof_cams
+          - Total number of sampled cameras. Default: 10
+          - int
+        * - noof_cams_per_scene
+          - Number of sampled cameras after which object poses are re-sampled. Default: 5
+          - int
+        * - object_pose_sampler
+          - The config module based on the object.ObjectPoseSampler Default: {}
+          - dict
+        * - camera_pose_sampler
+          - The config module based on the camera.CameraSampler Default: {}
+          - dict
     """
 
     def __init__(self, config):
@@ -41,9 +53,19 @@ class CameraObjectSampler(Module):
             frame_id = bpy.context.scene.frame_end
 
             # TODO: Use Getter for selecting objects
-            for obj in get_all_mesh_objects():
+            for obj in get_all_blender_mesh_objects():
                 # insert keyframes for current object poses
-                self._object_pose_sampler.insert_key_frames(obj, frame_id)
+                self.insert_key_frames(obj, frame_id)
 
             # sample new camera poses
             self._camera_pose_sampler.run()
+
+    def insert_key_frames(self, obj, frame_id):
+        """ Insert key frames for given object pose
+        :param obj: Loaded object. Type: blender object.
+        :param frame_id: The frame number where key frames should be inserted. Type: int.
+        """
+
+        obj.keyframe_insert(data_path='location', frame=frame_id)
+        obj.keyframe_insert(data_path='rotation_euler', frame=frame_id)
+

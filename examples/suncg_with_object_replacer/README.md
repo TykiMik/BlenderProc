@@ -73,15 +73,10 @@ python scripts/visHdf5Files.py example/suncg_with_object_replacer/output/0.hdf5
           }
         },
       }
-    },
+    }
 ```
 
 * This module replaces objects from `objects_to_be_replaced` with objects from `objects_to_replace_with`. The module uses for that the `getter.Entity` provider.
 * Furthermore, a probability of `switch_probability` can be set to make the switching probabilistic, if no collision happens between `objects_to_replace_with` and objects in the scene.
 * When `copy_properties` is set to `True`, the `objects_to_replace_with` gets all the custom properties that the `objects_to_be_replaced` used to have.
 * This module doesn't do collision checking between `objects_to_replace_with` and object provided by the `getter.Entity` `ignore_collision_with`.
-
-## More examples
-
-* [sung_basic](../suncg_basic): More on rendering SUNCG scenes with fixed camera poses.
-* [suncg_with_cam_sampling](../suncg_with_cam_sampling): More on rendering SUNCG scenes with dynamically sampled camera poses.

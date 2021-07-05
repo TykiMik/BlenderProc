@@ -68,7 +68,7 @@ python scripts/visHdf5Files.py examples/camera_sampling/output/0.hdf5
       }
     ]
   }
-},
+}
 ```
 
 The `camera.CameraSampler` module allows sampling camera positions and orientations. 
@@ -85,9 +85,3 @@ The [getter.POI](../../src/provider/getter) Provider also has a well-defined con
 
 * Optionally, add an `"inplane_rot"` sampler to rotate the camera around the optical axis
 It samples float values between specified `min` and `max` in radians. Here it is used to randomly inplane rotate the cameras in an interval of +/- 45 degree.
-
-## More examples
-
-* [semantic_segmentation](../semantic_segmentation): Introduction to semantic segmentation
-* [light_sampling](../light_sampling): More on sampling for lights.
-* [entity_manipulation](../entity_manipulation): More on the true power of Providers.

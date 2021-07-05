@@ -1,15 +1,23 @@
 import os
+import math
+import threading
 import uuid
+from typing import List, Dict, Any, Tuple
+
 import bpy
 import time
 import inspect
 import importlib
+import git
+
+from src.main.GlobalStorage import GlobalStorage
 from src.utility.Config import Config
-from mathutils import Vector
+from mathutils import Matrix, Vector
 import numpy as np
 
 class Utility:
     working_dir = ""
+    temp_dir = ""
     used_temp_id = None
 
     @staticmethod
@@ -17,10 +25,25 @@ class Utility:
         """ Initializes the modules described in the given configuration.
 
         Example for module_configs:
-        [{
-          "module": "base.ModuleA",
-          "config": {...}
-        }, ...]
+
+
+        .. code-block:: yaml
+
+            [{
+              "module": "base.ModuleA",
+              "config": {...}
+            }, ...]
+
+        If you want to execute a certain module several times, add the `amount_of_repetions` on the same level as the
+        module name:
+
+        .. code-block:: yaml
+
+            [{
+              "module": "base.ModuleA",
+              "config": {...},
+              "amount_of_repetitions": 3
+            }, ...]
 
         Here the name contains the path to the module class, starting from inside the src directory.
 
@@ -28,7 +51,7 @@ class Utility:
         they are not copied into the new config.
 
         :param module_configs: A list of dicts, each one describing one module.
-        :return:
+        :return: a list of initialized modules
         """
         modules = []
 
@@ -44,47 +67,81 @@ class Utility:
                 # Overwrite with module specific config
                 Utility.merge_dicts(module_config["config"], config)
 
+            # Check if the module has a repetition counter
+            amount_of_repetitions = 1
+            if "amount_of_repetitions" in module_config:
+                amount_of_repetitions = Config(module_config).get_int("amount_of_repetitions")
+
             with Utility.BlockStopWatch("Initializing module " + module_config["module"]):
-                # Import file and extract class
-                module_class = getattr(importlib.import_module("src." + module_config["module"]), module_config["module"].split(".")[-1])
-                # Create module
-                modules.append(module_class(Config(config)))
+                for i in range(amount_of_repetitions):
+                    module_class = None
+                    # For backwards compatibility we allow to specify a modules also without "Module" suffix.
+                    for suffix in ["Module", ""]:
+                        try:
+                            # Try to load the module using the current suffix
+                            module = importlib.import_module("src." + module_config["module"] + suffix)
+                        except ModuleNotFoundError:
+                            # Try next suffix
+                            continue
+
+                        # Check if the loaded module has a class with the same name
+                        class_name = module_config["module"].split(".")[-1] + suffix
+                        if hasattr(module, class_name):
+                            # Import file and extract class
+                            module_class = getattr(module, class_name)
+                            break
+
+                    # Throw an error if no module/class with the specified name + any suffix has been found
+                    if module_class is None:
+                        raise Exception("The module src." + module_config["module"] + " was not found!")
+
+                    # Create module
+                    modules.append(module_class(Config(config)))
 
         return modules
 
     @staticmethod
-    def transform_point_to_blender_coord_frame(point, frame_of_point):
-        """ Transforms the given point into the blender coordinate frame.
+    def get_current_version():
+        """ Gets the git commit hash.
 
-        Example: [1, 2, 3] and ["X", "-Z", "Y"] => [1, -3, 2]
-
-        :param point: The point to convert in form of a list or mathutils.Vector.
-        :param frame_of_point: An array containing three elements, describing the axes of the coordinate frame the point is in. (Allowed values: "X", "Y", "Z", "-X", "-Y", "-Z")
-        :return: The converted point also in form of a list or mathutils.Vector.
+        :return: a string, the BlenderProc version, or None if unavailable
         """
-        assert len(frame_of_point) == 3, "The specified coordinate frame has more or less than tree axes: {}".format(frame_of_point)
+        try:
+            repo = git.Repo(search_parent_directories=True)
+        except git.InvalidGitRepositoryError as e:
+            warnings.warn("Invalid git repository")
+            return None
+        return repo.head.object.hexsha
 
-        output = []
-        for i, axis in enumerate(frame_of_point):
+    @staticmethod
+    def transform_matrix_to_blender_coord_frame(matrix, source_frame):
+        """ Transforms the given homog into the blender coordinate frame.
+
+        :param matrix: The matrix to convert in form of a mathutils.Matrix.
+        :param frame_of_point: An array containing three elements, describing the axes of the coordinate frame of the \
+                               source frame. (Allowed values: "X", "Y", "Z", "-X", "-Y", "-Z")
+        :return: The converted point is in form of a mathutils.Matrix.
+        """
+        assert len(source_frame) == 3, "The specified coordinate frame has more or less than tree axes: {}".format(frame_of_point)
+        output = np.eye(4)
+        for i, axis in enumerate(source_frame):
             axis = axis.upper()
 
             if axis.endswith("X"):
-                output.append(point[0])
+                output[:4,0] = matrix.col[0]
             elif axis.endswith("Y"):
-                output.append(point[1])
+                output[:4,1] = matrix.col[1]
             elif axis.endswith("Z"):
-                output.append(point[2])
+                output[:4,2] = matrix.col[2]
             else:
                 raise Exception("Invalid axis: " + axis)
 
             if axis.startswith("-"):
-                output[-1] *= -1
+                output[:3, i] *= -1
 
-        # Depending on the given type, return a vector or a list
-        if isinstance(point, Vector):
-            return Vector(output)
-        else:
-            return output
+        output[:4,3] = matrix.col[3]
+        output = Matrix(output)
+        return output
 
     @staticmethod
     def resolve_path(path):
@@ -103,22 +160,12 @@ class Utility:
             return os.path.join(os.path.dirname(Utility.working_dir), path)
 
     @staticmethod
-    def get_temporary_directory(config_object):
-        ''' 
+    def get_temporary_directory():
+        """
         :return: default temporary directory, shared memory if it exists
-        '''
+        """
+        return Utility.temp_dir
 
-        # Per default, use shared memory as temporary directory. If that doesn't exist on the current system, switch back to tmp.
-        if os.path.exists("/dev/shm"):
-            default_temp_dir = "/dev/shm"
-        else:
-            default_temp_dir = "/tmp"
-        if Utility.used_temp_id is None:
-            Utility.used_temp_id = str(uuid.uuid4().hex)
-        temp_dir = Utility.resolve_path(os.path.join(config_object.get_string("temp_dir", default_temp_dir),  "blender_proc_" + Utility.used_temp_id))
-
-        return temp_dir
-    
     @staticmethod
     def merge_dicts(source, destination):
         """ Recursively copies all key value pairs from src to dest (Overwrites existing)
@@ -159,6 +206,7 @@ class Utility:
     def get_idx(array,item):
         """
         Returns index of an element if it exists in the list
+
         :param array: a list with values for which == operator works.
         :param item: item to find the index of
         :return: index of item, -1 otherwise
@@ -173,8 +221,7 @@ class Utility:
         """ Replaces the node between source_socket and dest_socket with a new node.
 
         Before: source_socket -> dest_socket
-        After: source_socket -> new_node_dest_socket
-               new_node_src_socket -> dest_socket
+        After: source_socket -> new_node_dest_socket and new_node_src_socket -> dest_socket
 
         :param links: The collection of all links.
         :param source_socket: The source socket.
@@ -187,14 +234,15 @@ class Utility:
                 links.remove(l)
 
         links.new(source_socket, new_node_dest_socket)
-        links.new(new_node_src_socket, dest_socket)\
+        links.new(new_node_src_socket, dest_socket)
 
     @staticmethod
     def get_node_connected_to_the_output_and_unlink_it(material):
         """
         Searches for the OutputMaterial in the given material and finds the connected node to it,
         removes the connection between this node and the output and returns this node and the material_output
-        :param material_slot: material slot (
+
+        :param material_slot: material slot
         """
         nodes = material.node_tree.nodes
         links = material.node_tree.links
@@ -215,6 +263,7 @@ class Utility:
     def get_nodes_with_type(nodes, node_type):
         """
         Returns all nodes which are of the given node_type
+
         :param nodes: list of nodes of the current material
         :param node_type: node types
         :return: list of nodes, which belong to the type
@@ -236,7 +285,7 @@ class Utility:
         if node and len(node) == 1:
             return node[0]
         else:
-            raise Exception("There is not only one node of this type: {}".format(node_type))
+            raise Exception("There is not only one node of this type: {}, there are: {}".format(node_type, len(node)))
 
     class BlockStopWatch:
         """ Calls a print statement to mark the start and end of this block and also measures execution time.
@@ -297,12 +346,14 @@ class Utility:
 
         The given config should follow the following scheme:
 
-        {
-          "provider": "<name of provider class>"
-          "parameters": {
-            <provider parameters>
-          }
-        }
+        .. code-block:: yaml
+
+            {
+              "provider": "<name of provider class>"
+              "parameters": {
+                <provider parameters>
+              }
+            }
 
         :param config: A Configuration object or a dict containing the configuration data.
         :return: The constructed provider.
@@ -316,12 +367,12 @@ class Utility:
                 parameters[key] = config.data[key]
 
         if not config.has_param('provider'):
-            raise Exception("Each provider needs an provider label, this one does not contain one: {}".format(config.data))
+            raise Exception("Each provider needs a provider label, this one does not contain one: {}".format(config.data))
 
         return Utility.build_provider(config.get_string("provider"), parameters)
 
     @staticmethod
-    def generate_equidistant_values(num, space_size_per_dimension):
+    def generate_equidistant_values(num: int, space_size_per_dimension: int) -> Tuple[List[List[int]], int]:
         """ This function generates N equidistant values in a 3-dim space and returns num of them.
 
         Every dimension of the space is limited by [0, K], where K is the given space_size_per_dimension.
@@ -340,7 +391,8 @@ class Utility:
         while num_splits_per_dimension ** 3 < num:
             num_splits_per_dimension += 1
 
-        # Calc the side length of a block. We do a integer division here, s.t. we get blocks with the exact same size, even though we are then not using the full space of [0, 255] ** 3
+        # Calc the side length of a block. We do a integer division here, s.t. we get blocks with the exact same size,
+        # even though we are then not using the full space of [0, 255] ** 3
         block_length = space_size_per_dimension // num_splits_per_dimension
 
         # Calculate the center of each block and use them as equidistant values
@@ -380,48 +432,18 @@ class Utility:
         return np.round(values)
 
     @staticmethod
-    def import_objects(filepath, cached_objects=None, **kwargs):
-        """ Import all objects for the given file and returns the loaded objects
+    def add_output_entry(output):
+        """ Registers the given output in the scene's custom properties
 
-        In .obj files a list of objects can be saved in.
-        In .ply files only one object can saved so the list has always at most one element
-
-        :param filepath: the filepath to the location where the data is stored
-        :param cached_objects: a dict of filepath to objects, which have been loaded before, to avoid reloading (the dict is updated in this function)
-        :param kwargs: all other params are handed directly to the bpy loading fct. check the corresponding documentation
-        :return: a list of all newly loaded objects, in the failure case an empty list is returned
+        :param output: A dict containing key and path of the new output type.
         """
-        if os.path.exists(filepath):
-            if cached_objects is not None and isinstance(cached_objects, dict):
-                if filepath in cached_objects.keys():
-                    created_obj = []
-                    for obj in cached_objects[filepath]:
-                        # deselect all objects and duplicate the object
-                        bpy.ops.object.select_all(action='DESELECT')
-                        obj.select_set(True)
-                        bpy.ops.object.duplicate()
-                        # save the duplicate in new list
-                        if len(bpy.context.selected_objects) != 1:
-                            raise Exception("The amount of objects after the copy was more than one!")
-                        created_obj.append(bpy.context.selected_objects[0])
-                    return created_obj
-                else:
-                    loaded_objects = Utility.import_objects(filepath, cached_objects=None, **kwargs)
-                    cached_objects[filepath] = loaded_objects
-                    return loaded_objects
-            else:
-                # save all selected objects
-                previously_selected_objects = set(bpy.context.selected_objects)
-                if filepath.endswith('.obj'):
-                    # load an .obj file:
-                    bpy.ops.import_scene.obj(filepath=filepath, **kwargs)
-                elif filepath.endswith('.ply'):
-                    # load a .ply mesh
-                    bpy.ops.import_mesh.ply(filepath=filepath, **kwargs)
-                # return all currently selected objects
-                return list(set(bpy.context.selected_objects) - previously_selected_objects)
+        if GlobalStorage.is_in_storage("output"):
+            if not Utility.output_already_registered(output, GlobalStorage.get("output")): # E.g. multiple camera samplers
+                GlobalStorage.get("output").append(output)
         else:
             raise Exception("The given filepath does not exist: {}".format(filepath))
+            
+        GlobalStorage.set("output", [output])
 
     @staticmethod
     def clamp(x, minimum, maximum):
@@ -510,3 +532,122 @@ class Utility:
             round((max_x - min_x) * dim_x),  # Width
             round((max_y - min_y) * dim_y)  # Height
         )
+        
+    @staticmethod
+    def register_output(output_dir, prefix, key, suffix, version, unique_for_camposes=True):
+        """ Registers new output type using configured key and file prefix.
+
+        :param output_dir: The output directory containing the generated files.
+        :param prefix: The default prefix of the generated files.
+        :param key: The default key which should be used for storing the output in merged file.
+        :param suffix: The suffix of the generated files.
+        :param version: The version number which will be stored at key_version in the final merged file.
+        :param unique_for_camposes: True if the output to be registered is unique for all the camera poses
+        """
+
+        Utility.add_output_entry({
+            "key": key,
+            "path": os.path.join(output_dir, prefix) + ("%04d" if unique_for_camposes else "") + suffix,
+            "version": version
+        })
+
+    @staticmethod
+    def find_registered_output_by_key(key):
+        """ Returns the output which was registered with the given key.
+
+        :param key: The output key to look for.
+        :return: The dict containing all information registered for that output. If no output with the given key exists, None is returned.
+        """
+        for output in Utility.get_registered_outputs():
+            if output["key"] == key:
+                return output
+
+        return None
+
+    @staticmethod
+    def get_registered_outputs() -> List[Dict[str, Any]]:
+        """ Returns a list of outputs which were registered.
+
+        :return: A list of dicts containing all information registered for the outputs. 
+        """
+        outputs = []
+        if GlobalStorage.is_in_storage("output"):
+            outputs = GlobalStorage.get("output")
+        
+        return outputs
+
+    @staticmethod
+    def output_already_registered(output, output_list):
+        """ Checks if the given output entry already exists in the list of outputs, by checking on the key and path.
+        Also throws an error if it detects an entry having the same key but not the same path and vice versa since this
+        is ambiguous.
+
+        :param output: The output dict entry.
+        :param output_list: The list of output entries.
+        :return: bool indicating whether it already exists.
+        """
+        for _output in output_list:
+            if output["key"] == _output["key"] and output["path"] == _output["path"]:
+                print("Warning! Detected output entries with duplicate keys and paths")
+                return True
+            if output["key"] == _output["key"] or output["path"] == _output["path"]:
+                raise Exception("Can not have two output entries with the same key/path but not same path/key." +
+                                "Original entry's data: key:{} path:{}, Entry to be registered: key:{} path:{}"
+                                .format(_output["key"], _output["path"], output["key"], output["path"]))
+
+        return False
+
+
+    @staticmethod
+    def insert_keyframe(obj, data_path, frame=None):
+        """ Inserts a keyframe for the given object and data path at the specified frame number:
+
+        :param obj: The blender object to use.
+        :param data_path: The data path of the attribute.
+        :param frame: The frame number to use. If None is given, the current frame number is used.
+        """
+        # If no frame is given use the current frame specified by the surrounding KeyFrame context manager
+        if frame is None and KeyFrame.is_any_active():
+            frame = bpy.context.scene.frame_current
+        # If no frame is given and no KeyFrame context manager surrounds us => do nothing
+        if frame is not None:
+            obj.keyframe_insert(data_path=data_path, frame=frame)
+
+
+# KeyFrameState should be thread-specific
+class KeyFrameState(threading.local):
+    def __init__(self):
+        super(KeyFrameState, self).__init__()
+        self.depth = 0
+
+
+class KeyFrame:
+    # Remember how many KeyFrame context manager have been applied around the current execution point
+    state = KeyFrameState()
+
+    def __init__(self, frame):
+        """ Sets the frame number for its complete block.
+
+        :param frame: The frame number to set. If None is given, nothing is changed.
+        """
+        self._frame = frame
+        self._prev_frame = None
+
+    def __enter__(self):
+        KeyFrame.state.depth += 1
+        if self._frame is not None:
+            self._prev_frame = bpy.context.scene.frame_current
+            bpy.context.scene.frame_set(self._frame)
+
+    def __exit__(self, type, value, traceback):
+        KeyFrame.state.depth -= 1
+        if self._prev_frame is not None:
+            bpy.context.scene.frame_set(self._prev_frame)
+
+    @staticmethod
+    def is_any_active() -> bool:
+        """ Returns whether the current execution point is surrounded by a KeyFrame context manager.
+
+        :return: True, if there is at least one surrounding KeyFrame context manager
+        """
+        return KeyFrame.state.depth > 0

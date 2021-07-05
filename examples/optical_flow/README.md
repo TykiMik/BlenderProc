@@ -50,6 +50,7 @@ python scripts/visHdf5Files.py examples/optical_flow/output/1.hdf5
 ### FlowRenderer
 
 ```yaml
+{
   "module": "renderer.FlowRenderer",
   "config": {
       "forward_flow_output_key": "forward_flow",
@@ -57,6 +58,7 @@ python scripts/visHdf5Files.py examples/optical_flow/output/1.hdf5
       "forward_flow": True,
       "backward_flow": True,
       "blender_image_coordinate_style": False
+  }
 }
 ```
 
@@ -77,8 +79,3 @@ Zoomed version:
 ![](num_samples_zoomed.png)
 
 Following this argumentation we suggest using the default setting.
-
-## More examples
-
-* [camera_sampling](../camera_sampling): Introduction to sampling for cameras.
-* [light_sampling](../light_sampling): Introduction to sampling for lights.

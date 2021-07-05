@@ -9,7 +9,7 @@ In this example we demonstrate the basic functionality of BlenderProc.
 
 ## Usage
 
-Execute in the BlenderProc main directory, if this is the first time BlenderProc is executed. It will automatically downloaded blender 2.82, see the config-file if you want to change the installation path:
+Execute in the BlenderProc main directory, if this is the first time BlenderProc is executed. It will automatically download blender, see the config-file if you want to change the installation path:
 
 ```
 python run.py examples/basic/config.yaml examples/basic/camera_positions examples/basic/scene.obj examples/basic/output
@@ -123,7 +123,7 @@ It also initializes the GlobalStorage, which contains two parts:
   "config": {
     "path": "<args:0>",
     "file_format": "location rotation/value",
-    "default_cam_param": {
+    "intrinsics": {
       "fov": 1
     }
   }
@@ -138,7 +138,7 @@ It also initializes the GlobalStorage, which contains two parts:
 location_x location_y location_z  rotation_euler_x rotation_euler_y rotation_euler_z
 ```
 
-* The FOV is the same for all cameras and is therefore set inside `default_cam_param`.
+* The FOV is set via `intrinsics/fov`.
 * This module also writes the cam poses into extra `.npy` files located inside the `temp_dir` (default: /dev/shm/blender_proc_$pid). This is just some meta information, so we can later clearly say which image had been taken using which cam pose.
 
 => Creates the files `campose_0000.npy` and `campose_0001.npy` 
@@ -166,11 +166,13 @@ location_x location_y location_z  rotation_euler_x rotation_euler_y rotation_eul
 
 => Creates the files `rgb_0000.png` and `rgb_0001.png`.
 
-It also creates the normals and distance 
+It also creates the normals and distance
 
 * The normal and distance images are rendered using the `.exr` format which allows linear colorspace and higher precision
-* By default the distance image is antialiased (`"use_mist_distance"=True`).  To avoid any smoothing effects set it to `False`. 
-* The `normal_output_key` config defines the key name in the `.hdf5` file, same for the `distance_output_key`.
+* By using `"render_distance": True`, an antialiased distance image is rendered. To render a z-buffer depth image without any smoothing effects use `"render_depth": True` instead. 
+  While distance and depth images sound similar, they are not the same: In [distance images](https://en.wikipedia.org/wiki/Range_imaging), each pixel contains the actual distance from the camera position to the corresponding point in the scene. 
+  In [depth images](https://en.wikipedia.org/wiki/Depth_map), each pixel contains the distance between the camera and the plane parallel to the camera which the corresponding point lies on.
+* The `normal_output_key` config defines the key name in the `.hdf5` file, same for the `distance_output_key`
 
 => Creates the files `normal_0000.exr` and `normal_0001.exr` and the files `distance_0000.exr` and `distance_0001.exr`.
 
@@ -212,9 +214,3 @@ The file `0.h5py` would therefore look like the following:
 * If you want to keep them, put `"output_is_temp": False` into the config of the corresponding module or in the `Global` section.
 
 => Creates the files `0.h5py` and `1.h5py`
-
-## More examples
-
-* [camera_sampling](../camera_sampling): Introduction to sampling for cameras.
-* [light_sampling](../light_sampling): Introduction to sampling for lights.
-* [semantic_segmentation](../semantic_segmentation): Introduction to semantic segmentation

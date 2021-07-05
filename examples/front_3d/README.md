@@ -15,23 +15,22 @@ As you are required to agree to the Use Of Terms for this dataset, we can not pr
 However, we will give you a step by step explanation on how to get access.
 
 1. Visit the following webiste and download the "3D-FRONT Terms of Use" as a pdf: `https://tianchi.aliyun.com/specials/promotion/alibaba-3d-scene-dataset`
-2. Write an E-Mail to `3dfront@list.alibaba-inc.com` with the following content 
-and **attach the Terms of Use pdf**: 
-
-    ```text
-    Dear 3D Future Team,
-
-    I hereby agree to the Terms of Use defined in the attached document.
-
-    Name: {YOUR NAME}
-    Affiliation: {YOUR AFFILIATION}
-
-    Best regards,
-    {YOUR NAME}
-    ```
+2. Write an E-Mail to `3dfront@list.alibaba-inc.com` with the content shown below and **attach the Terms of Use pdf**: 
 3. They will reply with two links one for the house, which is referred to as the 3D-Front dataset and a link to the furniture, which is called 3D-Future. Download both and save them in a folder.
 4. Unzip both files, which should give you two folders one for the houses (3D-FRONT) and one for the furniture (3D-FUTURE-model). So far we have no use for the `categories.py` and the `model_info.json`.
 5. Inside the 3D-FRONT folder you will find the json files, where each file represent its own house/flat. The 3D-FUTURE-model path only has to be passed as second argument, the objects will be automatically selected.
+
+```text
+Dear 3D Future Team,
+
+I hereby agree to the Terms of Use defined in the attached document.
+
+Name: {YOUR NAME}
+Affiliation: {YOUR AFFILIATION}
+
+Best regards,
+{YOUR NAME}
+```
 
 ## Usage
 
@@ -128,10 +127,3 @@ python scripts/visHdf5Files.py examples/front_3d/output/0.hdf5
   * the average of distance values must lie between 2.5 and 3.5 meters
   * And there are no background pixels allowed, which means the camera will not look out of one of the open windows or doors
 * The location and rotation are only added here to the sampled locations. Each sampled location is in one of the rooms on the floor, we can now add a certain distance from the floor with the location sampling. The same is true for the rotation sampling. Each pose is validated against the criterias at the top and also if it is directly above the floor. So positions above a bed for example will be discarded. 
-
-## More examples
-
-* [front_3d_with_improved_mat](../front_3d_with_improved_mat): More on rendering 3D Front scenes with sampled camera poses and randomized textures.
-* [sung_basic](../suncg_basic): More on rendering SUNCG scenes with fixed camera poses.
-* [suncg_with_cam_sampling](../suncg_with_cam_sampling): More on rendering SUNCG scenes with dynamically sampled camera poses.
-
