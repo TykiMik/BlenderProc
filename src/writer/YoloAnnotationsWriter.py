@@ -35,7 +35,7 @@ class YoloAnnotationsWriter(WriterInterface):
             return
 
         # Find path pattern of rgb images
-        rgb_output = self._find_registered_output_by_key(self.rgb_output_key)
+        rgb_output = Utility.find_registered_output_by_key(self.rgb_output_key)
         if rgb_output is None:
             raise Exception("There is no output registered with key {}. Are you sure you ran the RgbRenderer module "
                             "before?".format(self.rgb_output_key))

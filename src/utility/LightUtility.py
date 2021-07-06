@@ -19,6 +19,9 @@ class Light(Entity):
         bpy.context.collection.objects.link(light_obj)
         super(Light, self).__init__(light_obj)
 
+    def set_cast_shadow(self, cast_shadow):
+            self.blender_obj.data.cycles.cast_shadow = cast_shadow
+
     def set_energy(self, energy: float, frame: int = None):
         """ Sets the energy of the light.
 

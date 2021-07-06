@@ -1,8 +1,10 @@
-# Args: <obj_file1> <obj_file2> <output_dir> <temp_dir> <Material.blend>
+# Args: <obj_file1/generator output/pellet objects> <obj_file2/holder object> <output_dir/only for hdf5 files> <blend file for material>
+# usage(win): py run.py --temp-dir examples/pellet/output --keep-temp-dir examples/pellet/config_material.yaml examples/pellet/active_generator.obj examples/pellet/passive.obj examples/pellet/output examples/pellet/Material.blend
+# the temp dir where all the rgb images are saved, --keep-temp-dir needed if we don't want to delete them after the run.
 {
   "version": 3,
   "setup": {
-    "custom_blender_path": "C:/Program Files/Blender Foundation/Blender 2.83/",
+    "custom_blender_path": "C:/Program Files/Blender Foundation/Blender 2.92/",
     "pip": [
       "h5py"
     ]
@@ -12,10 +14,7 @@
       "module": "main.Initializer",
       "config": {
         "global": {
-          "output_is_temp": True,
-          "temp_dir": "<args:2>",
-          "resolution_x": 1280,
-          "resolution_y": 720
+          "output_dir": "<args:2>"
         }
       }
     },
@@ -23,9 +22,9 @@
       "module": "constructor.PelletGenerator",
       "config":{
         "output_path": "<args:0>",
-        "amount": 2000,
-        "primitive_shape_scale": 0.4,
-        "use_existing": False
+        "amount": 500,
+        "primitive_shape_scale": 0.5,
+        "use_existing": True
       }
     },
     {
@@ -43,7 +42,8 @@
       "config": {
         "path": "<args:1>",
         "add_properties": {
-          "cp_physics": False
+          "cp_physics": False,
+          "cp_physics_collision_shape": "MESH"
         }
       }
     },
@@ -51,7 +51,7 @@
       "module": "loader.BlendLoader",
       "config": {
         "path": "<args:3>",
-        "load_from": "/Material"
+        "datablocks": ["materials"]
       }
     },
     {
@@ -74,7 +74,7 @@
         "pos_sampler":{
           "provider":"sampler.Uniform3d",
           "max":[4, 4, 4],
-          "min":[-4, -4, 300]
+          "min":[-4, -4, 70]
         },
         "rot_sampler":{
           "provider":"sampler.UniformSO3"
@@ -275,7 +275,11 @@
               "value": [0, 0, -1.5707963]
             }
           }
-        ]
+        ],
+        "intrinsics": {
+          "resolution_x": 1280,
+          "resolution_y": 720
+        }
       }
     },
     {
@@ -284,13 +288,7 @@
         "min_simulation_time": 4,
         "max_simulation_time": 15,
         "check_object_interval": 1,
-        "collision_margin": 0.02,
-        "objs_with_mesh_collision_shape": {
-          "provider": "getter.Entity",
-          "conditions": {
-            "cp_physics": False
-          }
-        }
+        "collision_margin": 0.02
       }
     },
     {

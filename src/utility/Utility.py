@@ -434,16 +434,14 @@ class Utility:
     @staticmethod
     def add_output_entry(output):
         """ Registers the given output in the scene's custom properties
-
         :param output: A dict containing key and path of the new output type.
         """
+
         if GlobalStorage.is_in_storage("output"):
             if not Utility.output_already_registered(output, GlobalStorage.get("output")): # E.g. multiple camera samplers
                 GlobalStorage.get("output").append(output)
         else:
-            raise Exception("The given filepath does not exist: {}".format(filepath))
-            
-        GlobalStorage.set("output", [output])
+            GlobalStorage.set("output", [output])
 
     @staticmethod
     def clamp(x, minimum, maximum):

@@ -61,6 +61,7 @@ class LightInterface(Module):
 
         :param config: A configuration object which contains all parameters relevant for the new light source.
         """
+        light_type = config.get_string("type", 'POINT')
         light = Light()
         light.set_type(light_type)
         light.set_location(config.get_list("location", [0, 0, 0]))
@@ -69,8 +70,5 @@ class LightInterface(Module):
         light.set_color(config.get_list("color", [1, 1, 1])[:3])
         light.set_distance(config.get_float("distance", 0))
         if light_type == "SUN" or light_type == "AREA":
-            light_data.cycles.cast_shadow = config.get_bool("cast_shadow", True)
-        if light_type == "SUN":
-            bpy.context.view_layer.objects.active = light_obj
-            bpy.context.object.data.angle = config.get_float("angle", 0.526) / 180 * math.pi
+            light.set_cast_shadow(config.get_bool("cast_shadow", True))
 

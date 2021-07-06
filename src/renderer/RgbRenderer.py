@@ -59,7 +59,7 @@ class RgbRenderer(RendererInterface):
         self._motion_blur_length = config.get_float('motion_blur_length', 0.1)
         self._use_rolling_shutter = config.get_bool('use_rolling_shutter', False)
         self._rolling_shutter_length = config.get_float('rolling_shutter_length', 0.2)
-
+        self._use_denoiser = config.get_bool("use_denoiser", True)
 
     def run(self):
         # if the rendering is not performed -> it is probably the debug case.
@@ -90,13 +90,6 @@ class RgbRenderer(RendererInterface):
                 enable_transparency=self.config.get_bool("transparent_background", False),
                 file_format=self._image_type
             )
-
-        if self._image_type == 'PNG':
-            self._register_output("rgb_", "colors", ".png", "1.0.0")
-        elif self._image_type == 'JPEG':
-            self._register_output("rgb_", "colors", ".jpg", "1.0.0")
-        else:
-            raise Exception("Unknown Image Type " + self._image_type)
 
     def _addSideBlur(self, config):
         scene = bpy.context.scene

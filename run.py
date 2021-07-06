@@ -253,13 +253,6 @@ if len(required_packages) > 0:
                 else:
                     subprocess.Popen(["./python3.7m", "-m", "pip", "uninstall", package_name, "-y"], env=dict(os.environ, PYTHONPATH=packages_path), cwd=python_bin_folder).wait()
 
-        # Only install if its not already installed (pip would check this itself, but at first downloads the requested package which of course always takes a while)
-        if not already_installed or args.reinstall_packages:
-            if platform == "win32":
-                subprocess.Popen([f"{python_bin_folder}/python", "-m", "pip", "install", package, "--target", packages_path, "--upgrade"], env=dict(os.environ, PYTHONPATH=packages_path)).wait()
-            else:
-                subprocess.Popen(["./python3.7m", "-m", "pip", "install", package, "--target", packages_path, "--upgrade"], env=dict(os.environ, PYTHONPATH=packages_path), cwd=python_bin_folder).wait()
-
 # Run script
 if platform == "linux" or platform == "linux2" or platform == "win32":
     blender_run_path = os.path.join(blender_path, "blender")

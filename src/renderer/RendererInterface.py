@@ -4,6 +4,7 @@ import bpy
 from src.main.Module import Module
 from src.utility.Config import Config
 from src.utility.RendererUtility import RendererUtility
+from src.utility.Utility import Utility
 
 
 class RendererInterface(Module):
@@ -173,35 +174,10 @@ class RendererInterface(Module):
                                           self.config.get_int("transparency_bounces", 8),
                                           self.config.get_int("volume_bounces", 0))
 
-                # Link nodes
-                render_layer_node = nodes.get('Render Layers')
-                composite_node = nodes.get('Composite')
-                Utility.insert_node_instead_existing_link(links,
-                                                          render_layer_node.outputs['Image'],
-                                                          denoise_node.inputs['Image'],
-                                                          denoise_node.outputs['Image'],
-                                                          composite_node.inputs['Image'])
-
-                links.new(render_layer_node.outputs['DiffCol'], denoise_node.inputs['Albedo'])
-                links.new(render_layer_node.outputs['Normal'], denoise_node.inputs['Normal'])
-            elif denoiser.upper() == "BLENDER":
-                bpy.context.view_layer.cycles.use_denoising = True
-            else:
-                raise Exception("No such denoiser: " + denoiser)
-
         simplify_subdivision_render = self.config.get_int("simplify_subdivision_render", 3)
         if simplify_subdivision_render > 0:
             bpy.context.scene.render.use_simplify = True
             bpy.context.scene.render.simplify_subdivision_render = simplify_subdivision_render
-
-        bpy.context.scene.cycles.diffuse_bounces = self.config.get_int("diffuse_bounces", 3)
-        bpy.context.scene.cycles.glossy_bounces = self.config.get_int("glossy_bounces", 0)
-        bpy.context.scene.cycles.ao_bounces_render = self.config.get_int("ao_bounces_render", 3)
-        bpy.context.scene.cycles.max_bounces = self.config.get_int("max_bounces", 3)
-        bpy.context.scene.cycles.min_bounces = self.config.get_int("min_bounces", 1)
-        bpy.context.scene.cycles.transmission_bounces = self.config.get_int("transmission_bounces", 0)
-        bpy.context.scene.cycles.transparent_max_bounces = self.config.get_int("transparency_bounces", 8)
-        bpy.context.scene.cycles.volume_bounces = self.config.get_int("volume_bounces", 0)
 
         bpy.context.scene.cycles.debug_bvh_type = self.config.get_string("bvh_type", "DYNAMIC_BVH")
         bpy.context.scene.cycles.debug_use_spatial_splits = self.config.get_bool("use_spatial_splits", True)
@@ -259,5 +235,5 @@ class RendererInterface(Module):
                 self._determine_output_dir(),
                 self.config.get_string(output_file_prefix_parameter_name, default_prefix),
                 self.config.get_string(output_key_parameter_name, default_key),
-                return_data=False
-            )
+                return_data=False)
+
