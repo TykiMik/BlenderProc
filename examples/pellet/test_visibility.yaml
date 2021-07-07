@@ -1,0 +1,99 @@
+{
+  "version": 3,
+  "setup": {
+    "custom_blender_path": "C:/Program Files/Blender Foundation/Blender 2.92/",
+    "pip": [
+      "h5py"
+    ]
+  },
+  "modules": [
+    {
+      "module": "main.Initializer",
+      "config": {
+        "global": {
+          "output_dir": ""
+        }
+      }
+    },
+    {
+      "module": "loader.ObjectLoader",
+      "config": {
+        "path": "<args:0>",
+        "add_properties": {
+           "cp_annot": True,
+           "cp_classId": 0
+        }
+      }
+    },
+    {
+      "module": "manipulators.WorldManipulator",
+      "config": {
+        "cf_bg_surface_color": [0.2, 0.2, 0.2, 0.2],
+        "cf_bg_surface_strength": 0.8
+      }
+    },
+    {
+      "module": "lighting.LightLoader",
+      "config": {
+        "lights": [
+          {
+            "type": "SUN",
+            "location": [0, 0, 0],
+            "rotation": {
+              "provider": "sampler.Uniform3d",
+              "min": [0.0, -0.436332, 1.570769],
+              "max": [0.0, -1.134464, 1.570769]
+            },
+            "cast_shadow": True,
+            "angle": {
+              "provider": "sampler.Value",
+              "type": "float",
+              "min": 15,
+              "max": 20
+            },
+            "energy": {
+              "provider": "sampler.Value",
+              "type": "float",
+              "min": 0.8,
+              "max": 0.9
+            }
+          }
+        ]
+      }
+    },
+    {
+      "module": "camera.CameraLoader",
+      "config": {
+        "cam_poses": [
+          {
+            "location": [7.35889, -6.92579, 4.95831],
+            "rotation": {
+              "value": [1.1949257097, 0, 0.894329398]
+            }
+          }
+        ],
+        "intrinsics": {
+          "resolution_x": 1280,
+          "resolution_y": 720
+        }
+      }
+    },
+    {
+      "module": "renderer.RgbRenderer",
+      "config": {
+        "samples": 60
+      }
+    },
+    {
+      "module": "writer.YoloAnnotationsWriter",
+      "config": {
+          "objs_to_annotate": {
+            "provider": "getter.Entity",
+            "conditions": {
+              "cp_annot": True
+            }
+          }
+      }
+    }
+  ]
+}

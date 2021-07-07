@@ -3,6 +3,7 @@ import bpy
 
 from src.writer.WriterInterface import WriterInterface
 from src.utility.Utility import Utility
+from src.utility.VisibilityUtility import VisibilityUtility
 
 
 class YoloAnnotationsWriter(WriterInterface):
@@ -55,7 +56,10 @@ class YoloAnnotationsWriter(WriterInterface):
 
             file = open(target_path, "w")
             count = 1
-            for obj in self.config.get_list("objs_to_annotate", []):
+
+            objects_to_annotate = self.config.get_list("objs_to_annotate", [])
+            visible_objects = VisibilityUtility.only_visible_objects(objects_to_annotate)
+            for obj in visible_objects:
                 if obj.get("classId") is None:
                     raise Exception("There is no classId custom property registered to the object: {}. "
                                     "You have to assign the property to every object you want to annotate".format(obj.name))
